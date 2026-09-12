@@ -34,7 +34,11 @@ The full 20-brand sweep passed 18 visual extractions and CSS-grounding checks. C
 
 Results are in `getdesign-runs/brand-smoke/pr26-review/summary-final.json`. The original sweep and Cursor retry are retained separately. `review.html` in the same directory contains the 20 palettes, source links, generated files and a downloadable human-review JSON form. All human ratings remain pending. The 18-of-20 primary-color requirement is a human review gate; CSS grounding alone does not satisfy it.
 
-WorkOS's hosted sign-in page loaded with the supplied configuration. The shared preview browser was unavailable, and no authenticated test session was supplied. Approval to create a temporary test user was requested but had not been received. No test account was created. The real signed-in key save/refresh/removal flow and authenticated dashboard extraction/download remain unverified.
+WorkOS's hosted sign-in page loaded with the supplied configuration. With explicit approval, temporary verified users with random passwords and non-deliverable email addresses were created through WorkOS. Password authentication succeeded, and genuine WorkOS sessions were sealed with the installed AuthKit cookie format for native Chromium. This verifies authenticated dashboard behavior; it does not test the hosted form and OAuth callback end to end. No email authentication or verification flow was invoked.
+
+The real Account page returned 200 with empty provider-key metadata. Both supplied provider keys saved through the UI with HTTP 200, persisted across refresh, and enabled Agent. Credential deletion returned 200; the final account's metadata query confirmed zero remaining keys. The initial account check had no browser errors.
+
+A signed-in `https://example.com` run successfully created a run and completed crawl and CSS extraction. Capture failed with `protected_gate`: the browser reported a login, consent, age, payment or verification gate. The pipeline stopped as intended, without clicking the gate or implicitly selecting text-only mode. A complete authenticated extraction and `design.md` download therefore remain unverified. Test runs were soft-deleted using the existing run deletion mutation; this retains records and any stored artifacts. Temporary WorkOS users were deleted after testing.
 
 Review artifacts are under `getdesign-runs/`, which is ignored by Git. Environment files and provider keys are not included in the change.
 
