@@ -42,6 +42,9 @@ export function ExtractionOnboarding() {
 export function useMutation() {
   return async () => "fixture-completed-run";
 }
+export function useConvexAuth() {
+  return { isAuthenticated: true, isLoading: false };
+}
 export function useQuery() {
   return [];
 }

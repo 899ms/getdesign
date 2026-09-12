@@ -8,6 +8,7 @@ import type { ProviderKeyMeta } from "../app/(dashboard)/account/provider-keys-c
 
 let auth: { user: { id: string } | null; accessToken?: string };
 let storedKeys: ProviderKeyMeta[] = [];
+let convexAuthenticated = true;
 const query = mock(async () => storedKeys);
 const getConvexClient = mock(() => ({ query }));
 
@@ -21,7 +22,10 @@ mock.module("next/navigation", () => ({
   useRouter: () => ({ refresh() {}, push() {} }),
 }));
 mock.module("@/lib/convex-server", () => ({ getConvexClient }));
-mock.module("convex/react", () => ({ useMutation: () => mock() }));
+mock.module("convex/react", () => ({
+  useMutation: () => mock(),
+  useConvexAuth: () => ({ isAuthenticated: convexAuthenticated, isLoading: !convexAuthenticated }),
+}));
 
 const { ExtractionOnboarding } =
   await import("../components/extraction-onboarding");
@@ -42,11 +46,19 @@ const key = (provider: ProviderKeyMeta["provider"]): ProviderKeyMeta => ({
 beforeEach(() => {
   auth = { user: { id: "fixture-user" }, accessToken: "fixture-token" };
   storedKeys = [];
+  convexAuthenticated = true;
   getConvexClient.mockClear();
   query.mockClear();
 });
 
 describe("extraction onboarding", () => {
+  test("Agent waits for Convex authentication even when provider keys are saved", () => {
+    convexAuthenticated = false;
+    const html = renderToStaticMarkup(
+      <AgentCommand credentialsReady user={{ id: "fixture-user" }} />,
+    );
+    expect(html).toMatch(/<textarea[^>]*disabled/);
+  });
   for (const providers of [
     [],
     ["daytona"],

@@ -63,7 +63,7 @@ export async function assertCaptureStillReady(sandbox: Sandbox, onPhase?: Captur
 }
 
 /**
- * Require two matching content observations at least 500ms apart. A known
+ * Require two ready content observations at least 500ms apart. A known
  * loader is waited out; a stable allowlisted intro button may be clicked once
  * through Computer Use. Unknown and protected gates fail without interaction.
  */
@@ -83,7 +83,10 @@ export async function waitForCaptureReadiness(sandbox: Sandbox, options: Readine
       lastReason = snapshot.reason;
       const stable = previous?.state === snapshot.state && previous.signature === snapshot.signature;
       if (snapshot.state === "blocked") throw new CaptureReadinessError(snapshot.reason);
-      if (snapshot.state === "ready" && stable) {
+      // Live counters, carousels and typing effects can change page geometry
+      // and text continuously without hiding the real content. Gate clicks
+      // still require an identical signature and target across observations.
+      if (snapshot.state === "ready" && previous?.state === "ready") {
         options.onPhase?.({ phase: "ready_state", status: "ok", detail: clicked ? "content ready after intro click" : "content ready", durationMs: Date.now() - started });
         return;
       }

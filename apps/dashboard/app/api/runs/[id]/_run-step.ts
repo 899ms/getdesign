@@ -23,6 +23,7 @@ import {
   resolveRunCredentials,
 } from "@/lib/run-credentials";
 import type { RunStep } from "@/lib/runs-store";
+import { runStepRejection } from "@/lib/run-step-policy";
 import { prependTextOnlyBanner } from "@/lib/text-only-banner";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -87,6 +88,10 @@ export function runStepHandler(step: RunStep) {
     if (status === "ok" || status === "skipped") {
       return NextResponse.json({ ok: true, skipped: true });
     }
+    const rejection = runStepRejection(run, step);
+    if (rejection) {
+      return NextResponse.json({ error: rejection }, { status: 409 });
+    }
 
     const artifacts = await convex.query(api.designRunArtifacts.getForRun, {
       runId,
@@ -104,6 +109,9 @@ export function runStepHandler(step: RunStep) {
       const persisted = await convex.query(api.designRuns.get, { id: runId, userId: user.id }).catch(() => null);
       return NextResponse.json({ ok: true, analytics: persisted ? runReceipt(persisted, run.startedAt) : undefined });
     } catch (error) {
+      if (error instanceof StepAlreadyStarted) {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
       await convex.mutation(api.designRuns.failStep, {
         id: runId,
         userId: user.id,
@@ -361,12 +369,13 @@ async function beginStep(
   step: RunStep,
   message: string,
 ) {
-  await convex.mutation(api.designRuns.beginStep, {
+  const claimed = await convex.mutation(api.designRuns.beginStep, {
     id,
     userId,
     step,
     message,
   });
+  if (claimed === false) throw new StepAlreadyStarted();
 }
 
 async function finishStep(
@@ -585,6 +594,12 @@ async function loadTileArtifacts(
       };
     }),
   );
+}
+
+class StepAlreadyStarted extends Error {
+  constructor() {
+    super("This step has already started. Wait for its result.");
+  }
 }
 
 class StepError extends Error {

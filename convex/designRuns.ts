@@ -1,11 +1,12 @@
 import { ConvexError, v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import {
   textOnlyResumePatch,
   textOnlyResumeRejection,
 } from "./designRunPolicy";
-import { requireWorkOsUserId } from "./workosAuth";
+import { requireMatchingWorkOsUserId, requireWorkOsUserId } from "./workosAuth";
 
 const stepSchema = v.union(
   v.literal("crawl"),
@@ -63,7 +64,8 @@ function initialSteps() {
   };
 }
 
-async function getOwnedRun(ctx: { db: any }, id: any, userId: string) {
+async function getOwnedRun(ctx: QueryCtx, id: Id<"designRuns">, userId: string) {
+  await requireMatchingWorkOsUserId(ctx, userId);
   const run = await ctx.db.get(id);
   if (!run || run.userId !== userId || run.deletedAt) return null;
   return run;
@@ -79,6 +81,10 @@ export const create = mutation({
   },
   returns: v.id("designRuns"),
   handler: async (ctx, args) => {
+    const userId = await requireMatchingWorkOsUserId(ctx, args.userId);
+    if (args.rerunOf && !(await getOwnedRun(ctx, args.rerunOf, userId))) {
+      throw new ConvexError("Run not found.");
+    }
     let normalizedUrl: string;
     try {
       normalizedUrl = normalizeUrl(args.url);
@@ -93,7 +99,7 @@ export const create = mutation({
     const now = Date.now();
 
     return await ctx.db.insert("designRuns", {
-      userId: args.userId,
+      userId,
       userEmail: args.userEmail,
       url: normalizedUrl,
       normalizedUrl,
@@ -135,6 +141,7 @@ export const listRecent = query({
   },
   returns: v.array(v.any()),
   handler: async (ctx, { userId, limit = 24 }) => {
+    await requireMatchingWorkOsUserId(ctx, userId);
     const rows = await ctx.db
       .query("designRuns")
       .withIndex("by_user_updated", (q) => q.eq("userId", userId))
@@ -166,10 +173,12 @@ export const beginStep = mutation({
     step: stepSchema,
     message: v.string(),
   },
-  returns: v.null(),
+  returns: v.boolean(),
   handler: async (ctx, args) => {
     const run = await getOwnedRun(ctx, args.id, args.userId);
     if (!run) throw new ConvexError("Run not found.");
+    const status = run.steps[args.step];
+    if (status === "running" || status === "ok" || status === "skipped") return false;
     const now = Date.now();
 
     await ctx.db.patch(args.id, {
@@ -185,7 +194,7 @@ export const beginStep = mutation({
       startedAt: run.startedAt ?? now,
       updatedAt: now,
     });
-    return null;
+    return true;
   },
 });
 

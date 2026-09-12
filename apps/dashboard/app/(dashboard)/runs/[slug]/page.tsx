@@ -21,13 +21,13 @@ export default async function RunPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const { user } = await withAuth()
+  const { user, accessToken } = await withAuth()
 
   if (!user) {
     redirect("/sign-in")
   }
 
-  const convex = getConvexClient()
+  const convex = getConvexClient(accessToken)
   const run = await convex.query(api.designRuns.get, {
     id: slug as Id<"designRuns">,
     userId: user.id,

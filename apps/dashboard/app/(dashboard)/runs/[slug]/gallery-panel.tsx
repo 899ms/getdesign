@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { api } from "@convex/_generated/api";
@@ -27,10 +27,11 @@ export function GalleryPanel({
   totalExpected?: number;
   highlightIndex?: number;
 }) {
-  const live = useQuery(api.designRunArtifacts.getTileUrls, {
+  const { isAuthenticated } = useConvexAuth();
+  const live = useQuery(api.designRunArtifacts.getTileUrls, isAuthenticated ? {
     runId: runId as Id<"designRuns">,
     userId,
-  });
+  } : "skip");
 
   const tiles: LightboxTile[] =
     Array.isArray(live) && live.length > 0 ? live : initialTiles;

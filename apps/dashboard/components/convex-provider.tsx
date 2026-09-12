@@ -1,7 +1,25 @@
 "use client";
 
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { useMemo } from "react";
+import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
+import { useAccessToken, useAuth } from "@workos-inc/authkit-nextjs/components";
+import { useCallback, useMemo } from "react";
+
+function useConvexWorkOsAuth() {
+  const { user, loading } = useAuth();
+  const { getAccessToken, refresh } = useAccessToken();
+  const fetchAccessToken = useCallback(
+    async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
+      if (!user) return null;
+      try {
+        return (await (forceRefreshToken ? refresh() : getAccessToken())) ?? null;
+      } catch {
+        return null;
+      }
+    },
+    [user, getAccessToken, refresh],
+  );
+  return { isLoading: loading, isAuthenticated: !!user, fetchAccessToken };
+}
 
 export function DashboardConvexProvider({
   children,
@@ -16,5 +34,9 @@ export function DashboardConvexProvider({
     return new ConvexReactClient(url);
   }, []);
 
-  return <ConvexProvider client={convex}>{children}</ConvexProvider>;
+  return (
+    <ConvexProviderWithAuth client={convex} useAuth={useConvexWorkOsAuth}>
+      {children}
+    </ConvexProviderWithAuth>
+  );
 }

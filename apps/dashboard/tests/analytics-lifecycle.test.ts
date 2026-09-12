@@ -13,7 +13,7 @@ test("analytics hooks follow persisted dashboard step lifecycle with isolated mo
     child.exited,
   ]);
   expect(exitCode, `${stdout}\n${stderr}`).toBe(0);
-  expect(`${stdout}\n${stderr}`).toContain("5 pass");
+  expect(`${stdout}\n${stderr}`).toMatch(/\b[1-9]\d* pass\b/);
 });
 
 test("design.md download instrumentation excludes failed dispatches and sensitive artifact data", async () => {

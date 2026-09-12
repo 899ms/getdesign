@@ -12,6 +12,7 @@ type Fixture = {
 let run: Fixture;
 let failRender = false;
 let failFinalRead = false;
+let denyStepClaim = false;
 let savedMarkdown = false;
 let reads = 0;
 const query = mock(async (reference: Parameters<typeof getFunctionName>[0]) => {
@@ -32,6 +33,7 @@ const mutation = mock(
   ) => {
     const name = getFunctionName(reference);
     if (name === "designRuns:beginStep") {
+      if (denyStepClaim) return false;
       run.status = "running";
       run.startedAt ??= 123;
     }
@@ -87,10 +89,11 @@ beforeEach(() => {
     normalizedUrl: "https://secret.test",
     status: "running",
     startedAt: 123,
-    steps: { render: "pending" },
+    steps: { crawl: "ok", capture: "ok", extract: "ok", describe: "ok", synthesize: "ok", render: "pending" },
   };
   failRender = false;
   failFinalRead = false;
+  denyStepClaim = false;
   savedMarkdown = false;
   reads = 0;
   query.mockClear();
@@ -109,6 +112,26 @@ test("completion receipt exists only after markdown storage and final persistenc
   expect(JSON.stringify(body.analytics)).not.toMatch(
     /PRIVATE|secret.test|fixture-auth/,
   );
+});
+
+test("a lost step claim returns conflict without overwriting another request's run", async () => {
+  denyStepClaim = true;
+  const response = await invoke();
+  expect(response.status).toBe(409);
+  expect(run.status).toBe("running");
+  expect(run.error).toBeUndefined();
+  expect(savedMarkdown).toBe(false);
+  expect(mutation.mock.calls.map(([reference]) => getFunctionName(reference))).toEqual(["designRuns:beginStep"]);
+});
+
+test("a direct render request cannot turn capture failure into unmarked text-only output", async () => {
+  run.steps.capture = "failed";
+  run.status = "failed";
+  const response = await invoke();
+  expect(response.status).toBe(409);
+  expect(run.status).toBe("failed");
+  expect(mutation).not.toHaveBeenCalled();
+  expect(savedMarkdown).toBe(false);
 });
 
 test("first actual step transition acknowledges start; queued alone never does", async () => {

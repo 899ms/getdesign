@@ -1,6 +1,8 @@
 import { ConvexError, v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import { requireMatchingWorkOsUserId } from "./workosAuth";
 
 const artifactKindSchema = v.union(
   v.literal("crawl"),
@@ -11,7 +13,8 @@ const artifactKindSchema = v.union(
   v.literal("markdown"),
 );
 
-async function assertOwnedRun(ctx: { db: any }, runId: any, userId: string) {
+async function assertOwnedRun(ctx: QueryCtx, runId: Id<"designRuns">, userId: string) {
+  await requireMatchingWorkOsUserId(ctx, userId);
   const run = await ctx.db.get(runId);
   if (!run || run.userId !== userId || run.deletedAt) {
     throw new ConvexError({

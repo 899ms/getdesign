@@ -18,7 +18,8 @@ by ADR 0002. There is no CDP input, DOM mutation, host-side CDP, or overlay hidi
   `runCapture`/`captureFullPage` can lower it or raise it up to 30 seconds.
   Setup and transport calls share this budget. Polls are 500ms apart, with a
   hard cap of 60 polls and 10,000 inspected DOM elements.
-- Two matching observations of visible content are required. Recognized loaders
+- Two consecutive observations of visible content are required. Animated text
+  and layout changes do not need to freeze before capture. Recognized loaders
   and blank pages wait within the budget, then fail if they persist.
 - One click per attempt is allowed only on a stable, enabled button in a
   full-viewport intro layer. It must have an explicit label such as "Enter site",

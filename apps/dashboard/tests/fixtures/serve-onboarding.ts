@@ -9,7 +9,10 @@ const result = await Bun.build({
   entrypoints: [resolve(import.meta.dir, "onboarding-app.tsx")],
   target: "browser",
   tsconfig: resolve(dashboard, "tsconfig.json"),
-  define: { "process.env.NODE_ENV": '"development"' },
+  define: {
+    "process.env.NODE_ENV": '"development"',
+    "process.env.NEXT_PUBLIC_POSTHOG_CONFIG": "undefined",
+  },
   plugins: [
     {
       name: "local-onboarding-fixtures",

@@ -3,7 +3,7 @@
 import { getAnalytics } from "@getdesign/analytics";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "convex/react";
+import { useConvexAuth, useMutation } from "convex/react";
 
 import { InputBar } from "@/components/agent-elements/input-bar";
 import { BrandMark } from "@/components/brand-mark";
@@ -50,6 +50,7 @@ function isProbablyUrl(value: string) {
 }
 
 export function AgentCommand({ credentialsReady, user }: AgentCommandProps) {
+  const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
   const createRun = useMutation(api.designRuns.create);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export function AgentCommand({ credentialsReady, user }: AgentCommandProps) {
         sendLabel="Start extraction"
         className="px-0 pb-0"
         status={isPending || isRunning ? "submitted" : "ready"}
-        disabled={!credentialsReady || isRunning}
+        disabled={!credentialsReady || !isAuthenticated || isRunning}
         placeholder={
           credentialsReady
             ? "Enter a URL..."

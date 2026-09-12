@@ -48,13 +48,13 @@ function parseDesignMd(content: string): Pick<DesignRun, "title" | "theme" | "co
 }
 
 export default async function Page() {
-  const { user } = await withAuth()
+  const { user, accessToken } = await withAuth()
 
   if (!user) {
     redirect("/sign-in")
   }
 
-  const convex = getConvexClient()
+  const convex = getConvexClient(accessToken)
   const recent = await convex.query(api.designRuns.listRecent, {
     userId: user.id,
     limit: 24,

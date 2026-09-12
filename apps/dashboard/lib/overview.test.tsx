@@ -19,10 +19,11 @@ const query = mock(async (_reference: unknown, args: Record<string, unknown>) =>
 // Mock auth/data and the independently tested onboarding server boundary.
 // Keep the real onboarding UI in this render to check the combined Overview.
 mock.module("@workos-inc/authkit-nextjs", () => ({
-  withAuth: async () => ({ user: { id: "overview-test-user" } }),
+  withAuth: async () => ({ user: { id: "overview-test-user" }, accessToken: "overview-token" }),
 }));
+const getConvexClient = mock(() => ({ query }));
 mock.module("./convex-server", () => ({
-  getConvexClient: () => ({ query }),
+  getConvexClient,
 }));
 mock.module("../components/extraction-onboarding", () => ({
   ExtractionOnboarding: () => <ExtractionGuide credentialsReady={false} />,
@@ -34,6 +35,7 @@ beforeEach(() => {
   recent = [];
   artifacts = {};
   query.mockClear();
+  getConvexClient.mockClear();
 });
 
 function completedRun(id: string): RunFixture {
@@ -42,6 +44,10 @@ function completedRun(id: string): RunFixture {
 }
 
 describe("Overview recent-run summary", () => {
+  test("authenticates the server's run queries with the WorkOS access token", async () => {
+    await Page();
+    expect(getConvexClient).toHaveBeenCalledWith("overview-token");
+  });
   test("keeps onboarding above recent runs and explains the empty state", async () => {
     const html = renderToStaticMarkup(await Page());
 

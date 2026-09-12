@@ -9,6 +9,18 @@ import { content, inspectFixture, intro, loader, ordinaryCta, protectedGate } fr
 
 const viewport = { width: 1024, height: 768 };
 
+test("animated content can become ready without an identical text or geometry signature", async () => {
+  const ready = inspectFixture(content);
+  const fixture = sandboxForFrames([
+    { ...ready, signature: "[1024,9187,10936,433]" },
+    { ...ready, signature: "[1024,9189,10918,433]" },
+    { ...ready, signature: "[1024,9188,10921,433]" },
+  ]);
+  await waitForCaptureReadiness(fixture.sandbox, { viewport, timeoutMs: 1500 });
+  expect(fixture.probes).toBe(2);
+  expect(fixture.clicks).toEqual([]);
+});
+
 function sandboxForFrames(frames: ReadinessSnapshot[], clickError?: Error) {
   let probes = 0;
   const clicks: number[][] = [];
@@ -154,11 +166,11 @@ test("Computer Use errors propagate without another click", async () => {
   expect(fake.clicks).toHaveLength(1);
 });
 
-test("changed content geometry resets the settle window", async () => {
+test("a reappearing loader resets the ready-content observations", async () => {
   const ready = inspectFixture(content);
-  const fake = sandboxForFrames([ready, { ...ready, signature: "changed" }, { ...ready, signature: "changed" }]);
-  await waitForCaptureReadiness(fake.sandbox, { viewport, timeoutMs: 2000 });
-  expect(fake.probes).toBe(3);
+  const fake = sandboxForFrames([ready, inspectFixture(loader), ready, ready]);
+  await waitForCaptureReadiness(fake.sandbox, { viewport, timeoutMs: 2500 });
+  expect(fake.probes).toBe(4);
 });
 
 test("viewport mismatch refuses a click", async () => {

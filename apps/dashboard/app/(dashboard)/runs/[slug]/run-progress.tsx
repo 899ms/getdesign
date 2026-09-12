@@ -5,7 +5,7 @@ import { captureRunReceipt, type RunReceipt } from "@getdesign/analytics/lifecyc
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 
 import { isCaptureFailure } from "@/lib/is-capture-failure";
 import { waitForStepGroup } from "@/lib/run-pipeline";
@@ -79,10 +79,11 @@ export function RunProgress({
   onActiveTileChange?: (index: number) => void;
 }) {
   const router = useRouter();
-  const liveRun = useQuery(api.designRuns.get, {
+  const { isAuthenticated } = useConvexAuth();
+  const liveRun = useQuery(api.designRuns.get, isAuthenticated ? {
     id: initialRun.id as Id<"designRuns">,
     userId,
-  });
+  } : "skip");
   const run = liveRun ? toRunState(liveRun) : initialRun;
   const runError = runErrorMessage(run.error);
   const [error, setError] = useState<string | null>(runError);

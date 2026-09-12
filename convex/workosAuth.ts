@@ -55,3 +55,13 @@ export async function requireWorkOsUserId(
 
   return identity.subject;
 }
+
+/** Reject caller-supplied IDs that do not match the verified token. */
+export async function requireMatchingWorkOsUserId(
+  ctx: AuthContext,
+  claimedUserId: string,
+): Promise<string> {
+  const userId = await requireWorkOsUserId(ctx);
+  if (userId !== claimedUserId) throw new ConvexError("Unauthorized");
+  return userId;
+}

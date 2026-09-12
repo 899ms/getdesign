@@ -28,6 +28,15 @@ export async function verifyCommandMenu(tab, { nativeKeyboard = true } = {}) {
         document.activeElement?.getAttribute("aria-label") ??
         document.activeElement?.textContent
     )
+  // Modal focus guards restore focus on the next frame after native Tab.
+  async function waitForFocus(label) {
+    const deadline = Date.now() + 2000
+    while (Date.now() < deadline) {
+      if ((await focusLabel()) === label) return true
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    }
+    return false
+  }
   const highlight = () =>
     tab.playwright
       .getByRole("option")
@@ -98,18 +107,18 @@ export async function verifyCommandMenu(tab, { nativeKeyboard = true } = {}) {
     check((await dialog().count()) === 1, "Search button activates with Enter")
     await search().press("Tab")
     check(
-      (await focusLabel()) === "Close command menu",
+      await waitForFocus("Close command menu"),
       "Tab reaches the close button"
     )
     await tab.playwright
       .getByRole("button", { name: "Close command menu" })
       .press("Tab")
     check(
-      (await focusLabel()) === "Search pages",
+      await waitForFocus("Search pages"),
       "Tab remains inside the dialog"
     )
     await search().press("Shift+Tab")
-    check((await focusLabel()) === "Close command menu", "Shift+Tab stays inside the dialog")
+    check(await waitForFocus("Close command menu"), "Shift+Tab stays inside the dialog")
     await tab.playwright.getByRole("button", { name: "Close command menu" }).press("Escape")
     await tab.playwright.getByRole("button", { name: "Search pages", exact: true }).press("Space")
     check((await dialog().count()) === 1, "Search button activates with Space")
