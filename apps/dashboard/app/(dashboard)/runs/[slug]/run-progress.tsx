@@ -5,7 +5,7 @@ import { captureRunReceipt, type RunReceipt } from "@getdesign/analytics/lifecyc
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 
 import { isCaptureFailure } from "@/lib/is-capture-failure";
 import { waitForStepGroup } from "@/lib/run-pipeline";
@@ -79,6 +79,7 @@ export function RunProgress({
   onActiveTileChange?: (index: number) => void;
 }) {
   const router = useRouter();
+  const createRun = useMutation(api.designRuns.create);
   const { isAuthenticated } = useConvexAuth();
   const liveRun = useQuery(api.designRuns.get, isAuthenticated ? {
     id: initialRun.id as Id<"designRuns">,
@@ -172,7 +173,27 @@ export function RunProgress({
     setError(runError ?? null);
   }, [runError]);
 
-  const onRetry = useCallback(() => void runSteps(), [runSteps]);
+  const hasRunningStep = Object.values(run.steps).includes("running");
+  const onRetry = useCallback(() => {
+    if (!hasRunningStep) {
+      void runSteps();
+      return;
+    }
+    // An interrupted server request may never release its step claim. A new
+    // run has separate artifacts, so late writes from the old request are safe.
+    setPendingAction("retry");
+    setError(null);
+    void createRun({
+      userId,
+      url: run.url,
+      siteName: run.siteName,
+      rerunOf: run.id as Id<"designRuns">,
+    }).then((id) => {
+      router.push(`/runs/${id}`);
+    }).catch((err: unknown) => {
+      setError(err instanceof Error ? err.message : "Could not start a new run.");
+    }).finally(() => setPendingAction(null));
+  }, [createRun, hasRunningStep, router, run.id, run.siteName, run.url, runSteps, userId]);
   const onContinueTextOnly = useCallback(
     () => void continueTextOnly(),
     [continueTextOnly],
@@ -242,6 +263,7 @@ export function RunProgress({
                   isRetrying={pendingAction === "retry"}
                   isContinuing={pendingAction === "text-only"}
                   showTextOnly={showTextOnly}
+                  startNewRun={hasRunningStep}
                 />
               ) : null}
             </motion.div>

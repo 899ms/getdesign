@@ -9,6 +9,7 @@ export function FailedStage({
   isRetrying,
   isContinuing,
   showTextOnly,
+  startNewRun = false,
 }: {
   error: string;
   onRetry: () => void;
@@ -16,6 +17,7 @@ export function FailedStage({
   isRetrying: boolean;
   isContinuing: boolean;
   showTextOnly: boolean;
+  startNewRun?: boolean;
 }) {
   const isBusy = isRetrying || isContinuing;
   return (
@@ -40,6 +42,12 @@ export function FailedStage({
         </div>
         <p className="text-sm font-medium">Run failed</p>
         <p className="text-xs text-muted-foreground">{error}</p>
+        {startNewRun ? (
+          <p className="text-xs text-muted-foreground">
+            If this run stopped responding, start a new visual run. It will use
+            your provider keys again. The original run stays in your history.
+          </p>
+        ) : null}
         {showTextOnly ? (
           <p className="text-xs text-muted-foreground">
             Visual capture failed. Continue without screenshots, or retry.
@@ -52,7 +60,7 @@ export function FailedStage({
             onClick={onRetry}
             disabled={isBusy}
           >
-            {isRetrying ? "Retrying…" : "Retry"}
+            {isRetrying ? "Retrying…" : startNewRun ? "Start new run" : "Retry"}
           </Button>
           {showTextOnly && onContinueTextOnly ? (
             <Button

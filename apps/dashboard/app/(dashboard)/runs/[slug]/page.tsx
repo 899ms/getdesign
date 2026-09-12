@@ -124,6 +124,7 @@ export default async function RunPage({
 
   return (
     <RunPageShell
+      key={slug}
       runId={slug}
       userId={user.id}
       initialTiles={tiles}

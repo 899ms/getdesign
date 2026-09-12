@@ -74,4 +74,27 @@ describe("run and artifact ownership", () => {
     expect(await invoke(runs.beginStep, ctx, args)).toBe(false);
     expect(ctx.db.patch).toHaveBeenCalledTimes(1);
   });
+
+  test("a fresh run can recover an interrupted owned run without changing its claim", async () => {
+    const ctx = context("owner");
+    const old = await ctx.db.get();
+    old.status = "running";
+    old.steps = { capture: "running" };
+    expect(await invoke(runs.create, ctx, {
+      userId: "owner", url: "https://example.com", rerunOf: "run",
+    })).toBe("new-run");
+    expect(ctx.db.patch).not.toHaveBeenCalled();
+    expect(old.steps).toEqual({ capture: "running" });
+    expect(ctx.db.insert.mock.calls[0]?.[1]).toMatchObject({
+      userId: "owner", status: "queued", rerunOf: "run", steps: { capture: "pending" },
+    });
+  });
+
+  test("recovery cannot reference another user's run", async () => {
+    const ctx = context("attacker");
+    await expect(invoke(runs.create, ctx, {
+      userId: "attacker", url: "https://example.com", rerunOf: "run",
+    })).rejects.toThrow("Run not found");
+    expect(ctx.db.insert).not.toHaveBeenCalled();
+  });
 });
