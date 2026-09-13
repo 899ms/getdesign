@@ -33,8 +33,7 @@ export type VisualResultShim = {
 
 export type VisualRequirement =
   | "require"
-  | "text_only_fallback"
-  | "skip_silently";
+  | "text_only_fallback";
 
 export type RunDesignCredentials = {
   daytonaApiKey?: string;
@@ -68,6 +67,7 @@ export type RunDesignEvent =
 export type RunDesignResult = {
   url: string;
   markdown: string;
+  images: DesignImage[];
   doc: DesignDoc;
   tokens: DesignTokens;
   crawl: CrawlSiteResultShim;
@@ -99,3 +99,5 @@ export async function runDesign(
 ): Promise<RunDesignResult> {
   throw new Error("typedoc-agent-shim: runDesign is not executable in docs builds");
 }
+
+export type DesignImage = { path: string; alt: string; imageBase64: string; mimeType: "image/webp"; width: number; height: number };

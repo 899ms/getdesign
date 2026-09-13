@@ -5,7 +5,7 @@ prev: false
 title: "GetDesignError"
 ---
 
-Defined in: [packages/sdk/src/index.ts:81](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L81)
+Defined in: [packages/sdk/src/index.ts:86](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L86)
 
 ## Extends
 
@@ -17,7 +17,7 @@ Defined in: [packages/sdk/src/index.ts:81](https://github.com/MohtashamMurshid/g
 
 > **new GetDesignError**(`status`, `payload`): `GetDesignError`
 
-Defined in: [packages/sdk/src/index.ts:85](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L85)
+Defined in: [packages/sdk/src/index.ts:90](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L90)
 
 #### Parameters
 
@@ -81,7 +81,7 @@ Defined in: node\_modules/.bun/typescript@6.0.3/node\_modules/typescript/lib/lib
 
 > `readonly` **payload**: [`GetDesignErrorPayload`](/reference/sdk/type-aliases/getdesignerrorpayload/)
 
-Defined in: [packages/sdk/src/index.ts:83](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L83)
+Defined in: [packages/sdk/src/index.ts:88](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L88)
 
 ***
 
@@ -101,7 +101,7 @@ Defined in: node\_modules/.bun/typescript@6.0.3/node\_modules/typescript/lib/lib
 
 > `readonly` **status**: `number`
 
-Defined in: [packages/sdk/src/index.ts:82](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L82)
+Defined in: [packages/sdk/src/index.ts:87](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L87)
 
 ***
 
@@ -201,7 +201,7 @@ a();
 
 > `static` **captureStackTrace**(`targetObject`, `constructorOpt?`): `void`
 
-Defined in: node\_modules/.bun/bun-types@1.3.13/node\_modules/bun-types/globals.d.ts:1042
+Defined in: node\_modules/.bun/bun-types@1.3.14/node\_modules/bun-types/globals.d.ts:1042
 
 Create .stack property on a target object
 
@@ -229,7 +229,7 @@ Create .stack property on a target object
 
 > `static` **isError**(`value`): `value is Error`
 
-Defined in: node\_modules/.bun/bun-types@1.3.13/node\_modules/bun-types/globals.d.ts:1037
+Defined in: node\_modules/.bun/bun-types@1.3.14/node\_modules/bun-types/globals.d.ts:1037
 
 Check if a value is an instance of Error
 

@@ -1,11 +1,21 @@
 "use client";
 
+import { getAnalytics } from "@getdesign/analytics";
+import { captureRunReceipt, type RunReceipt } from "@getdesign/analytics/lifecycle";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { useQuery } from "convex/react";
+import { useConvex, useConvexAuth, useMutation, useQuery } from "convex/react";
 
-import { toRunState, type RunState, type RunStep } from "@/lib/runs-store";
+import { isCaptureFailure } from "@/lib/is-capture-failure";
+import { runRecoveryState } from "@convex/designRunPolicy";
+import { waitForStepGroup, waitForRunningStep } from "@/lib/run-pipeline";
+import {
+  runErrorMessage,
+  toRunState,
+  type RunState,
+  type RunStep,
+} from "@/lib/runs-store";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
@@ -37,6 +47,13 @@ const STEP_DAG: Array<RunStep | RunStep[]> = [
   "render",
 ];
 
+const TEXT_ONLY_DAG: Array<RunStep | RunStep[]> = [
+  "extract",
+  "describe",
+  "synthesize",
+  "render",
+];
+
 export type Phase =
   | "kickoff"
   | "crawl"
@@ -63,16 +80,30 @@ export function RunProgress({
   onActiveTileChange?: (index: number) => void;
 }) {
   const router = useRouter();
-  const liveRun = useQuery(api.designRuns.get, {
+  const convex = useConvex();
+  const createRun = useMutation(api.designRuns.create);
+  const { isAuthenticated } = useConvexAuth();
+  const liveRun = useQuery(api.designRuns.get, isAuthenticated ? {
     id: initialRun.id as Id<"designRuns">,
     userId,
-  });
+  } : "skip");
   const run = liveRun ? toRunState(liveRun) : initialRun;
-  const runError =
-    typeof run.error === "object" && run.error ? run.error.message : run.error;
-  const [error, setError] = useState<string | null>(runError ?? null);
-  const [isRunning, setIsRunning] = useState(false);
+  const runError = runErrorMessage(run.error);
+  const [error, setError] = useState<string | null>(runError);
+  const [pendingAction, setPendingAction] = useState<"retry" | "text-only" | null>(
+    null,
+  );
   const startedRef = useRef(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 10_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const recovery = runRecoveryState(run, now);
+  const readRun = useCallback(async () => {
+    const latest = await convex.query(api.designRuns.get, { id: run.id as Id<"designRuns">, userId });
+    return latest ? toRunState(latest) : null;
+  }, [convex, run.id, userId]);
 
   const artifacts = useRunArtifacts(run, userId);
 
@@ -86,37 +117,66 @@ export function RunProgress({
   );
   const progress = Math.round((completedCount / STEP_ORDER.length) * 100);
 
-  const runSteps = useCallback(async () => {
-    setIsRunning(true);
-    setError(null);
-
-    try {
-      for (const group of STEP_DAG) {
+  const runPipeline = useCallback(
+    async (dag: Array<RunStep | RunStep[]>) => {
+      for (const group of dag) {
         if (Array.isArray(group)) {
-          await Promise.all(group.map((step) => postStep(run.id, step)));
+          await waitForStepGroup(group, (step) => postStep(run.id, step, readRun));
         } else {
-          await postStep(run.id, group);
+          await postStep(run.id, group, readRun);
         }
       }
       router.refresh();
+    },
+    [router, run.id, readRun],
+  );
+
+  const runSteps = useCallback(async () => {
+    setPendingAction("retry");
+    setError(null);
+
+    try {
+      await runPipeline(STEP_DAG);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Run failed.");
     } finally {
-      setIsRunning(false);
+      setPendingAction(null);
     }
-  }, [router, run.id]);
+  }, [runPipeline]);
+
+  const continueTextOnly = useCallback(async () => {
+    setPendingAction("text-only");
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/runs/${run.id}/continue-text-only`, {
+        method: "POST",
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Could not continue as text-only.");
+      }
+      await runPipeline(TEXT_ONLY_DAG);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Run failed.");
+    } finally {
+      setPendingAction(null);
+    }
+  }, [run.id, runPipeline]);
 
   useEffect(() => {
-    if (startedRef.current) return;
+    if (!isAuthenticated || startedRef.current) return;
     if (run.status === "completed" || run.status === "failed") return;
 
     startedRef.current = true;
     // runSteps mutates state inside; intentional kickoff side-effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void runSteps();
-  }, [run.status, runSteps]);
+  }, [isAuthenticated, run.status, runSteps]);
 
-  const phase = derivePhase(run, error);
+  const phase = recovery === "stalled" ? "failed" : derivePhase(run, error);
 
   useEffect(() => {
     // Mirror the convex-derived error into local state so transient client
@@ -125,8 +185,34 @@ export function RunProgress({
     setError(runError ?? null);
   }, [runError]);
 
-  const onRetry = useCallback(() => void runSteps(), [runSteps]);
+  const onRetry = useCallback(() => {
+    if (recovery === "active") return;
+    if (recovery === "idle") {
+      void runSteps();
+      return;
+    }
+    // An interrupted server request may never release its step claim. A new
+    // run has separate artifacts, so late writes from the old request are safe.
+    setPendingAction("retry");
+    setError(null);
+    void createRun({
+      userId,
+      url: run.url,
+      siteName: run.siteName,
+      rerunOf: run.id as Id<"designRuns">,
+    }).then((id) => {
+      router.push(`/runs/${id}`);
+    }).catch((err: unknown) => {
+      setError(err instanceof Error ? err.message : "Could not start a new run.");
+    }).finally(() => setPendingAction(null));
+  }, [createRun, recovery, router, run.id, run.siteName, run.url, runSteps, userId]);
+  const onContinueTextOnly = useCallback(
+    () => void continueTextOnly(),
+    [continueTextOnly],
+  );
   const onOpen = useCallback(() => router.refresh(), [router]);
+  const showTextOnly =
+    isCaptureFailure(run.error) || isCaptureFailure(error);
 
   const siteCaption = run.siteName ?? safeHostname(run.url);
 
@@ -183,9 +269,14 @@ export function RunProgress({
               ) : null}
               {phase === "failed" ? (
                 <FailedStage
-                  error={error ?? runError ?? "Run failed."}
+                  error={error ?? runError ?? (recovery === "stalled" ? "This run stopped reporting progress." : "Run failed.")}
                   onRetry={onRetry}
-                  isRetrying={isRunning}
+                  onContinueTextOnly={onContinueTextOnly}
+                  isRetrying={pendingAction === "retry"}
+                  isContinuing={pendingAction === "text-only"}
+                  showTextOnly={showTextOnly}
+                  startNewRun={recovery === "stalled"}
+                  waitingForStep={recovery === "active"}
                 />
               ) : null}
             </motion.div>
@@ -200,13 +291,21 @@ export function RunProgress({
   );
 }
 
-async function postStep(runId: string, step: RunStep) {
+async function postStep(runId: string, step: RunStep, readRun: () => Promise<RunState | null>) {
+  const current = await readRun();
+  if (current?.steps[step] === "running") return waitForRunningStep(step, readRun);
+  const analytics = getAnalytics();
+  const consentedAtStart = analytics.ready();
   const response = await fetch(`/api/runs/${runId}/${step}`, {
     method: "POST",
   });
   const payload = (await response.json().catch(() => ({}))) as {
     error?: string;
+    analytics?: RunReceipt;
+    code?: string;
   };
+  if (consentedAtStart) await captureRunReceipt(analytics, runId, payload.analytics);
+  if (response.status === 409 && payload.code === "step_running") return waitForRunningStep(step, readRun);
   if (!response.ok) {
     throw new Error(payload.error ?? `${step} failed.`);
   }

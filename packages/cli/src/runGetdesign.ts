@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { basename, dirname, join } from "node:path";
 
-import { GetDesignError, streamDesign } from "@getdesign/sdk";
+import { GetDesignError, streamDesign, type DesignImage } from "@getdesign/sdk";
 
 import { parseArgs, usage } from "./lib/parseArgs.js";
 import { normalizeUrl, resolveOutputPath } from "./lib/outputPath.js";
@@ -53,7 +53,7 @@ export async function runGetdesignCli(input: RunGetdesignCliInput = {}): Promise
 
   const daytonaApiKey = options.daytonaApiKey ?? env.DAYTONA_API_KEY;
   const openaiApiKey = options.openaiApiKey ?? env.OPENAI_API_KEY;
-  if (!daytonaApiKey) {
+  if (!daytonaApiKey && options.visualRequirement !== "text_only_fallback") {
     throw new Error("Missing Daytona API key. Pass --daytona-api-key or set DAYTONA_API_KEY.");
   }
   if (!openaiApiKey) {
@@ -67,6 +67,7 @@ export async function runGetdesignCli(input: RunGetdesignCliInput = {}): Promise
   const start = now();
   const progress = new ProgressDisplay(start, now);
   let markdown: string | undefined;
+  let images: DesignImage[] = [];
 
   for await (const event of streamDesign(url, {
     siteName: options.siteName,
@@ -79,6 +80,7 @@ export async function runGetdesignCli(input: RunGetdesignCliInput = {}): Promise
     }
     if (event.type === "result") {
       markdown = event.result.markdown;
+      images = event.result.images;
     }
   }
   progress.stop();
@@ -87,9 +89,20 @@ export async function runGetdesignCli(input: RunGetdesignCliInput = {}): Promise
     throw new Error("API stream ended without a design result.");
   }
 
-  await mkdir(dirname(target), { recursive: true });
-  await writeFile(target, markdown, "utf8");
+  await writeDesignFiles(target, markdown, images);
   console.error(`${GREEN}[${elapsed(start, now)}] getdesign: wrote ${target}${RESET}`);
 }
 
 export { GetDesignError };
+
+export async function writeDesignFiles(target: string, markdown: string, images: DesignImage[]): Promise<void> {
+  await mkdir(dirname(target), { recursive: true });
+  const imageDir = `${basename(target, ".md")}.images`;
+  if (images.length) await mkdir(join(dirname(target), imageDir), { recursive: true });
+  for (const image of images) {
+    const name = basename(image.path);
+    await writeFile(join(dirname(target), imageDir, name), Buffer.from(image.imageBase64, "base64"));
+    markdown = markdown.replaceAll(`](${image.path})`, `](${encodeURIComponent(imageDir)}/${encodeURIComponent(name)})`);
+  }
+  await writeFile(target, markdown, "utf8");
+}

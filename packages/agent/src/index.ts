@@ -34,3 +34,6 @@ export { resolveModel, getDefaultModelId } from "./model.js";
 export type { ResolveModelOptions } from "./model.js";
 
 export type { GetDesignUIMessage } from "./types.js";
+
+export { getDesignImages, embedDesignImages } from "./images.js";
+export type { DesignImage } from "./images.js";

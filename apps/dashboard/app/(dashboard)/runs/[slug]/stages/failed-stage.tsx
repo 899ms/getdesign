@@ -5,12 +5,23 @@ import { Button } from "@/components/ui/button";
 export function FailedStage({
   error,
   onRetry,
+  onContinueTextOnly,
   isRetrying,
+  isContinuing,
+  showTextOnly,
+  startNewRun = false,
+  waitingForStep = false,
 }: {
   error: string;
   onRetry: () => void;
+  onContinueTextOnly?: () => void;
   isRetrying: boolean;
+  isContinuing: boolean;
+  showTextOnly: boolean;
+  startNewRun?: boolean;
+  waitingForStep?: boolean;
 }) {
+  const isBusy = isRetrying || isContinuing || waitingForStep;
   return (
     <div className="flex h-full w-full items-center justify-center bg-destructive/5 p-6">
       <div className="flex w-full max-w-md flex-col items-center gap-3 text-center">
@@ -33,9 +44,38 @@ export function FailedStage({
         </div>
         <p className="text-sm font-medium">Run failed</p>
         <p className="text-xs text-muted-foreground">{error}</p>
-        <Button size="sm" variant="destructive" onClick={onRetry} disabled={isRetrying}>
-          {isRetrying ? "Retrying…" : "Retry"}
-        </Button>
+        {waitingForStep ? <p className="text-xs text-muted-foreground">Another step is still running. Wait for it to finish before retrying.</p> : null}
+        {startNewRun ? (
+          <p className="text-xs text-muted-foreground">
+            If this run stopped responding, start a new visual run. It will use
+            your provider keys again. The original run stays in your history.
+          </p>
+        ) : null}
+        {showTextOnly ? (
+          <p className="text-xs text-muted-foreground">
+            Visual capture failed. Continue without screenshots, or retry.
+          </p>
+        ) : null}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={onRetry}
+            disabled={isBusy}
+          >
+            {isRetrying ? "Retrying…" : startNewRun ? "Start new run" : "Retry"}
+          </Button>
+          {showTextOnly && onContinueTextOnly ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onContinueTextOnly}
+              disabled={isBusy}
+            >
+              {isContinuing ? "Continuing…" : "Continue with text-only"}
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

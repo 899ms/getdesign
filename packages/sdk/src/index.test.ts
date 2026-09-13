@@ -7,6 +7,7 @@ function stubResult(markdown = "# hi") {
   return {
     url: "https://example.com",
     markdown,
+    images: [],
     doc: { palette: { groups: [] } },
     tokens: { typography: { fontFamilies: [] } },
     crawl: { siteName: "Example", stylesheets: [] },
@@ -99,4 +100,29 @@ describe("streamDesign", () => {
     expect(result.done).toBe(false);
     expect(result.value?.type).toBe("result");
   });
+});
+
+
+test("SDK and final stream results retain decodable captured files; progress does not", async () => {
+  const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+  const visual = { status: "captured", hero: { imageBase64: png }, fullPage: { imageBase64: png }, tiles: [] } as unknown as import("@getdesign/agent").VisualResult;
+  const run = async (_url: string, options?: import("@getdesign/agent").RunDesignOptions) => {
+    await options?.onPhase?.({ phase: "visual", status: "ok", visual });
+    const { getDesignImages } = await import("@getdesign/agent");
+    return { ...stubResult("![Hero](images/hero.webp)"), images: await getDesignImages(visual), visual, mode: "visual" } as unknown as import("@getdesign/agent").RunDesignResult;
+  };
+  const result = await getDesign("https://example.com", { runDesign: run });
+  expect(result.images).toHaveLength(2);
+  for (const image of result.images) {
+    const bytes = Buffer.from(image.imageBase64, "base64");
+    expect(bytes.toString("ascii", 0, 4)).toBe("RIFF");
+    expect(bytes.toString("ascii", 8, 12)).toBe("WEBP");
+    expect(image.width).toBe(1);
+    expect(image.height).toBe(1);
+  }
+  const events = [];
+  for await (const event of streamDesign("https://example.com", { runDesign: run })) events.push(event);
+  expect(JSON.stringify(events[0])).not.toContain("imageBase64");
+  expect(JSON.stringify(events[0])).not.toContain(png);
+  expect(events[1]).toMatchObject({ type: "result", result: { images: result.images } });
 });

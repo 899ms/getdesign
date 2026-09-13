@@ -30,8 +30,7 @@ Options:
   Without `--out`, output is written to `./getdesign-runs/<slug>/design.md`.
 - `--daytona-api-key <key>` / `DAYTONA_API_KEY`: Daytona key for this run.
 - `--openai-api-key <key>` / `OPENAI_API_KEY`: OpenAI key for this run.
-- `--text-only-fallback`: continue with CSS/text-only output if visual capture
-  is unavailable.
+- `--text-only-fallback`: explicitly skip screenshots and produce labeled text-only output. OpenAI is still required; Daytona is optional in this mode.
 
 Progress is streamed to stderr as concise phase updates (`crawl`, `capture`,
 `visual`, `describe`, `extract`, `synthesize`, `render`) so stdout and generated
@@ -47,3 +46,7 @@ defaults.
 - SDK · `@getdesign/sdk`
 
 MIT © getdesign
+
+## Screenshot files
+
+Visual output includes `design.images/hero.webp` and `design.images/full-page.webp`, referenced by relative paths in `design.md`. A custom name such as `brand.md` uses `brand.images/`. Keep the document and directory together when moving or sharing them. Capture failure stops the command; images are omitted only with `--text-only-fallback`.

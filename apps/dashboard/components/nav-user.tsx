@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 
+import { getAnalytics } from "@getdesign/analytics"
+import { SITE_GITHUB_URL } from "@getdesign/content"
 import { signOutAction } from "@/app/actions/auth"
 import {
   Avatar,
@@ -28,6 +30,7 @@ import {
   UnfoldMoreIcon,
   CheckmarkBadgeIcon,
   UserGroupIcon,
+  CustomerSupportIcon,
   LogoutIcon,
 } from "@hugeicons/core-free-icons"
 
@@ -101,11 +104,24 @@ export function NavUser({
                 <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
                 Team
               </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <a
+                    href={`${SITE_GITHUB_URL}/issues`}
+                    target="_blank"
+                    rel="noreferrer"
+                  />
+                }
+              >
+                <HugeiconsIcon icon={CustomerSupportIcon} strokeWidth={2} />
+                Support
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={(event) => {
                 event.preventDefault()
+                getAnalytics().reset()
                 void signOutAction()
               }}
             >

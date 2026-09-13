@@ -14,6 +14,7 @@ import {
 import type { RunState } from "@/lib/runs-store";
 
 import { ExportActions } from "./export-actions";
+import { ShareRun } from "./share-run";
 import { GalleryPanel } from "./gallery-panel";
 import { RunProgress } from "./run-progress";
 import type { LightboxTile } from "./tile-lightbox";
@@ -29,7 +30,9 @@ import type { LightboxTile } from "./tile-lightbox";
  */
 export function RunPageShell({
   runId,
+  siteName,
   userId,
+  isPublic = false,
   initialTiles,
   totalExpected,
   exportMarkdown,
@@ -37,7 +40,9 @@ export function RunPageShell({
   runState,
 }: {
   runId: string;
+  siteName: string;
   userId: string;
+  isPublic?: boolean;
   initialTiles: LightboxTile[];
   totalExpected?: number;
   /** Markdown source string used by the export-actions toolbar. */
@@ -56,24 +61,27 @@ export function RunPageShell({
     <LayoutGroup id={`run-${runId}`}>
       <div className="flex min-h-svh flex-1 items-stretch">
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-            <Breadcrumb>
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+            <Breadcrumb className="min-w-0">
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Overview</BreadcrumbLink>
+                  <BreadcrumbLink href="/runs">Runs</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{runId}</BreadcrumbPage>
+                  <BreadcrumbPage className="max-w-[16rem] truncate sm:max-w-sm" title={siteName}>
+                    {siteName}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
             {exportMarkdown ? (
-              <div className="ml-auto flex items-center gap-1">
+              <div className="ml-auto flex items-center gap-2">
                 <ExportActions
                   content={exportMarkdown}
-                  filename={`${runId}.md`}
+                  siteName={siteName}
                 />
+                <ShareRun runId={runId} isPublic={isPublic} />
               </div>
             ) : null}
           </header>

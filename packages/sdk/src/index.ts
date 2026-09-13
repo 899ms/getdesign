@@ -1,11 +1,14 @@
 import type { DesignDoc, DesignTokens, RenderedDesignResult } from "@getdesign/types";
 import {
   RunDesignError,
+  type DesignImage,
   runDesign,
   type RunDesignEvent,
   type RunDesignOptions,
   type RunDesignResult,
 } from "@getdesign/agent";
+
+export type { DesignImage } from "@getdesign/agent";
 
 export const version = "0.0.1";
 export type { DesignDoc, DesignTokens, RenderedDesignResult } from "@getdesign/types";
@@ -22,7 +25,7 @@ export type GetDesignOptions = {
   siteName?: string;
   /** Request-scoped credentials for BYOK runs. */
   credentials?: GetDesignCredentials;
-  /** Continue with text-only output if visual capture is unavailable. */
+  /** Explicitly select text-only output; the default requires screenshots. */
   visualRequirement?: VisualRequirement;
   /** Force or skip i18n font install. Auto-detected from URL TLD when omitted. */
   installI18nFonts?: boolean;
@@ -41,6 +44,8 @@ export type GetDesignOptions = {
 export type GetDesignResult = {
   url: string;
   markdown: string;
+  /** Captured WebP files referenced by markdown. Empty only in explicit text-only mode. */
+  images: DesignImage[];
   doc: DesignDoc;
   tokens: DesignTokens;
   visualDescription: string | null;
@@ -213,6 +218,7 @@ function toGetDesignResult(result: RunDesignResult): GetDesignResult {
   return {
     url: result.url,
     markdown: result.markdown,
+    images: result.images,
     doc: result.doc,
     tokens: result.tokens,
     visualDescription: result.visualDescription,

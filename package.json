@@ -13,7 +13,10 @@
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
     "smoke:npm": "node scripts/npm-package-smoke.mjs",
-    "postinstall": "bun run --cwd ./packages/types build"
+    "smoke:brands": "bun ./scripts/brand-smoke.ts",
+    "smoke:brands:review": "bun ./scripts/brand-smoke-review.ts",
+    "postinstall": "bun run --cwd ./packages/types build && bun run --cwd ./packages/content build",
+    "build:dashboard:vercel": "bun scripts/build-dashboard.ts"
   },
   "packageManager": "bun@1.3.10",
   "engines": {
