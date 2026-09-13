@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { CachedSites } from "@/components/cached-sites"
 import { withAuth } from "@workos-inc/authkit-nextjs"
 import { redirect } from "next/navigation"
 import {
@@ -93,6 +94,8 @@ export default async function Page() {
       <div className="flex flex-1 flex-col gap-6 p-6">
 
         <ExtractionOnboarding />
+
+        <CachedSites />
 
         {/* Recent runs */}
         <div className="rounded-xl border">

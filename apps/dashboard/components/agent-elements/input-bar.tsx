@@ -74,6 +74,8 @@ export type InputBarProps = {
   value?: string;
   onChange?: (value: string) => void;
   disabled?: boolean;
+  /** Keep editing enabled while preventing submission. */
+  submitDisabled?: boolean;
   autoFocus?: boolean;
   suggestions?:
     | SuggestionItem[]
@@ -148,6 +150,7 @@ export const InputBar = memo(function InputBar({
   value: controlledValue,
   onChange: controlledOnChange,
   disabled,
+  submitDisabled,
   autoFocus,
   suggestions = [],
   typingAnimation,
@@ -212,10 +215,10 @@ export const InputBar = memo(function InputBar({
 
   const handleSubmit = useCallback(() => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming || disabled) return;
+    if (!trimmed || isStreaming || disabled || submitDisabled) return;
     onSend({ role: "user", content: trimmed });
     setInput("");
-  }, [input, isStreaming, disabled, onSend, setInput]);
+  }, [input, isStreaming, disabled, submitDisabled, onSend, setInput]);
 
   const handleInfoBarClose = useCallback(() => {
     setIsInfoBarOpen(false);
@@ -569,7 +572,7 @@ export const InputBar = memo(function InputBar({
                   type="button"
                   aria-label={isStreaming ? "Stop" : sendLabel}
                   title={isStreaming ? "Stop" : sendLabel}
-                  disabled={!isStreaming && (!hasInput || disabled)}
+                  disabled={!isStreaming && (!hasInput || disabled || submitDisabled)}
                   onClick={() => {
                     if (isStreaming) {
                       onStop();
@@ -583,7 +586,7 @@ export const InputBar = memo(function InputBar({
                     state={
                       isStreaming
                         ? "streaming"
-                        : hasInput && !disabled
+                        : hasInput && !disabled && !submitDisabled
                           ? "typing"
                           : "idle"
                     }

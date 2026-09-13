@@ -45,3 +45,16 @@ Review artifacts are under `getdesign-runs/`, which is ignored by Git. Environme
 The Convex functions and dashboard changes must be deployed together for the ownership and step-claim checks to take effect. A read-only check against the configured deployment queried a random nonexistent user ID without a token and received an empty list instead of an authentication rejection. No existing user's data was requested. This confirms that the deployed run functions still need the ownership fix. No production deployment or merge is part of this verification record.
 
 The browser authentication adapter follows the [Convex AuthKit Next.js template](https://github.com/get-convex/templates/blob/main/template-nextjs-authkit/components/ConvexClientProvider.tsx), checked against the installed WorkOS and Convex types.
+
+
+## Cached sites follow-up (2026-09-13)
+
+Overview now displays a curated library of 12 public-site snapshots: Clerk, Convex, Figma, Framer, Linear, Notion, Raycast, Resend, Stripe, Supabase, Vercel and WorkOS. The fresh batch ran three visual extractions concurrently; all 12 completed and passed CSS palette grounding. The catalog contains generated documents and safe display metadata, with capture dates. It includes no private run records or provider credentials.
+
+Signed-in users can open and download snapshots without provider keys or a new extraction. Agent recognizes exact cached page URLs. Refresh prefills a new private extraction, requires the user's keys, and preserves the shared snapshot. The same document renderer serves private runs and cached sites; its mobile layout now wraps long content without page overflow. See [cached-sites.md](cached-sites.md) for the repeatable batch command and storage behavior.
+
+Final automated suite: 264 passed, 39 build-dependent SEO tests skipped, zero failures. The SEO cases were previously verified separately and are unaffected by this dashboard change. Dashboard production build and TypeScript checks passed. Targeted ESLint found zero errors and one pre-existing image warning in the shared input component.
+
+Native Chromium verification covered all 12 cards and exact downloaded document contents, Overview widths 320/390/768/1440, mobile document layout, cached lookup by pressing Enter without keys, prefilled refresh with submission disabled when keys are missing, and unknown-site handling. No extraction HTTP requests, private runs or stored provider keys were created during the cache browsing check. The temporary WorkOS test account was deleted afterward. Browser artifacts are in `getdesign-runs/cached-sites-browser/`.
+
+This library ships with the dashboard and needs no new Convex schema. It does not remove the existing launch requirements for human palette review and deployment of the Convex ownership fix.

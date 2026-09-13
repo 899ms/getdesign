@@ -44,6 +44,15 @@ function completedRun(id: string): RunFixture {
 }
 
 describe("Overview recent-run summary", () => {
+  test("shows real shared snapshots without adding them to private run counts", async () => {
+    const html = renderToStaticMarkup(await Page());
+    expect(html).toContain("Cached sites");
+    expect(html).toContain('href="/sites/linear"');
+    expect(html).toContain("Captured");
+    expect(html).toContain("0 shown");
+    expect((html.match(/href="\/sites\//g) ?? []).length).toBeGreaterThanOrEqual(10);
+  });
+
   test("authenticates the server's run queries with the WorkOS access token", async () => {
     await Page();
     expect(getConvexClient).toHaveBeenCalledWith("overview-token");
@@ -58,20 +67,14 @@ describe("Overview recent-run summary", () => {
     expect(html).toContain('href="/account#provider-keys"');
   });
 
-  test("removes unsupported statistics, cached sites, and the inactive View all control", async () => {
+  test("removes unsupported statistics and the inactive View all control", async () => {
     const html = renderToStaticMarkup(await Page());
 
     for (const removed of [
       "Your runs",
       "Total runs",
-      "Sites cached",
       "3.2M",
       "13k",
-      "stripe.com",
-      "linear.app",
-      "vercel.com",
-      "notion.so",
-      "github.com",
       "google.com/s2/favicons",
       "View all",
     ]) {

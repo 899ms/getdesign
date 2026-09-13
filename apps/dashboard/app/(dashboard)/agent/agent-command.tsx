@@ -1,6 +1,8 @@
 "use client";
 
 import { getAnalytics } from "@getdesign/analytics";
+import Link from "next/link";
+import { findCachedSite } from "@/lib/cached-site-url";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useConvexAuth, useMutation } from "convex/react";
@@ -11,6 +13,8 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
 type AgentCommandProps = {
+  cachedSites?: { slug: string; url: string }[];
+  refreshSite?: { slug: string; url: string } | null;
   credentialsReady: boolean;
   user: {
     id: string;
@@ -49,10 +53,13 @@ function isProbablyUrl(value: string) {
   }
 }
 
-export function AgentCommand({ credentialsReady, user }: AgentCommandProps) {
+export function AgentCommand({ credentialsReady, user, cachedSites = [], refreshSite = null }: AgentCommandProps) {
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
   const createRun = useMutation(api.designRuns.create);
+  const [input, setInput] = useState(refreshSite?.url ?? "");
+  const cached = findCachedSite(input, cachedSites);
+  const useCached = cached && cached.slug !== refreshSite?.slug;
   const [error, setError] = useState<string | null>(null);
   const [run, setRun] = useState<RunState | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -71,19 +78,31 @@ export function AgentCommand({ credentialsReady, user }: AgentCommandProps) {
         </p>
       </div>
 
+      {useCached ? (
+        <p className="mb-3 text-center text-xs text-muted-foreground">A cached design is ready. Opening it uses no provider credits.</p>
+      ) : !credentialsReady ? (
+        <p className="mb-3 text-center text-xs text-muted-foreground"><Link href="/account#provider-keys" className="underline underline-offset-4">Add provider keys</Link> to start a new extraction. Cached sites are ready to open.</p>
+      ) : refreshSite && cached?.slug === refreshSite.slug ? (
+        <p className="mb-3 text-center text-xs text-muted-foreground">This starts a fresh extraction using your provider keys. The shared snapshot stays available.</p>
+      ) : null}
+
       <InputBar
         size="lg"
-        sendLabel="Start extraction"
+        value={input}
+        onChange={setInput}
+        sendLabel={useCached ? "Open cached site" : "Start extraction"}
         className="px-0 pb-0"
         status={isPending || isRunning ? "submitted" : "ready"}
-        disabled={!credentialsReady || !isAuthenticated || isRunning}
-        placeholder={
-          credentialsReady
-            ? "Enter a URL..."
-            : "Add Daytona and OpenAI keys on Account"
-        }
+        disabled={!isAuthenticated || isRunning}
+        submitDisabled={!credentialsReady && !useCached}
+        placeholder="Enter a URL..."
         onStop={() => {}}
         onSend={({ content }) => {
+          const match = findCachedSite(content, cachedSites);
+          if (match && match.slug !== refreshSite?.slug) {
+            router.push(`/sites/${match.slug}`);
+            return;
+          }
           getAnalytics().capture({ event: "cta_clicked", properties: { cta: "dashboard_start" } });
           setError(null);
           setRun(null);

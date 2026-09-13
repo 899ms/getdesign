@@ -121,14 +121,15 @@ describe("extraction onboarding", () => {
     ).toContain("download design.md");
   });
 
-  test("the Agent explains the result and keeps the URL input disabled without both keys", () => {
+  test("the Agent allows URL lookup without keys and explains new extraction requirements", () => {
     for (const ready of [false, true]) {
       const html = renderToStaticMarkup(
         <AgentCommand credentialsReady={ready} user={{ id: "fixture-user" }} />,
       );
       expect(html).toContain("download design.md");
       expect(html.includes("Set up provider keys")).toBe(!ready);
-      expect(/<textarea[^>]*disabled=""/.test(html)).toBe(!ready);
+      expect(/<textarea[^>]*disabled=""/.test(html)).toBe(false);
+      if (!ready) expect(html).toContain("Cached sites are ready to open.");
       expect(html).toContain('aria-label="Start extraction"');
     }
   });
