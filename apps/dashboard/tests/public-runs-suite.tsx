@@ -70,6 +70,15 @@ test("missing or unpublished runs return 404 for every download", async () => {
   await expect(Page(context)).rejects.toThrow("notFound");
 });
 
+test("agent links retain the public HTTPS host behind a reverse proxy", async () => {
+  const proxied = new Request("http://localhost:3000/r/published-run/design.json", {
+    headers: { host: "internal.local", "x-forwarded-host": "app.getdesign.app", "x-forwarded-proto": "https" },
+  });
+  const result = await (await json(proxied, context)).json();
+  expect(result.links.page).toBe("https://app.getdesign.app/r/published-run");
+  expect(result.images[0].url).toBe("https://app.getdesign.app/r/published-run/images/0");
+});
+
 test("screenshots return bytes rather than redirects to permanent storage URLs", async () => {
   const response = await image(request, { params: Promise.resolve({ id: "published-run", index: "0" }) });
   expect(response.status).toBe(200);

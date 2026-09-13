@@ -11,6 +11,19 @@ export const PUBLIC_RUN_HEADERS = {
 
 type PublishedRun = NonNullable<FunctionReturnType<typeof api.publicRuns.get>>;
 
+/** Preserve the public host when Next runs behind a reverse proxy. */
+export function publicRequestOrigin(request: Request) {
+  const url = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const protocol = request.headers.get("x-forwarded-proto");
+  if (host) {
+    url.port = "";
+    url.host = host;
+  }
+  if (protocol === "https" || protocol === "http") url.protocol = `${protocol}:`;
+  return url.origin;
+}
+
 export function formatPublicRun(run: PublishedRun, origin?: string) {
   const path = `/r/${encodeURIComponent(run.id)}`;
   const link = (suffix: string) => origin ? new URL(`${path}${suffix}`, origin).href : `${path}${suffix}`;
