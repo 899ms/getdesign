@@ -15,8 +15,6 @@ Current implementation status:
 
 - `apps/web` is implemented as a marketing site plus `/design` showcase.
 - `apps/web/app/api/waitlist/route.ts` is the only shipped API route in this repo today.
-- `apps/studio` is a separate Electron desktop Studio project, not one of the hosted getdesign URL-to-`design.md` surfaces.
-- `apps/studio-site` is a separate Studio marketing/web project, not the main `getdesign.app` product surface.
 - `packages/sdk` is now the Bun-first local execution SDK over the agent pipeline.
 - `packages/cli` is now a Bun CLI adapter over `@getdesign/sdk`; it runs on the user's machine/server with request-scoped BYOK credentials.
 - `skills/getdesign` is the implemented portable skill surface.
@@ -30,11 +28,6 @@ Four consumer surfaces, one agent core.
 
 All four surfaces call the same agent package; only the transport differs.
 
-Sibling app projects in the monorepo:
-
-- **Studio desktop** — [apps/studio](apps/studio) is the Electron Studio application. It owns local Studio chat state and provider execution concerns, and should be treated as a separate product from the hosted getdesign web/API flow.
-- **Studio site** — [apps/studio-site](apps/studio-site) is the Studio marketing/web site. It is separate from [apps/web](apps/web), which is the main getdesign landing/chat product.
-
 ## 2. Repository layout (Turborepo, Bun)
 
 Current repository snapshot:
@@ -45,8 +38,6 @@ getdesign/
 │   ├── api/          Bun + Hono HTTP API
 │   ├── deck/         Launch deck slides
 │   ├── docs/         Documentation site
-│   ├── studio/       Electron Studio desktop app
-│   ├── studio-site/  Studio marketing/web site
 │   ├── video/        Video app / asset pipeline
 │   └── web/          Next.js 16 — main getdesign landing, /design, waitlist route
 ├── packages/
@@ -77,8 +68,6 @@ getdesign/
 │   ├── web/
 │   ├── api/
 │   ├── docs/
-│   ├── studio/
-│   ├── studio-site/
 │   ├── deck/
 │   └── video/
 ├── packages/
