@@ -26,6 +26,46 @@ export type DesignRunPreview = {
   textOnly: boolean;
 };
 
+export function artifactSiteName(value: unknown): string | undefined {
+  if (!value || typeof value !== "object" || !("siteName" in value)) return undefined;
+  const name = value.siteName;
+  return typeof name === "string" && name.trim() ? name.trim() : undefined;
+}
+
+export function runPageTitle({
+  domain,
+  url,
+  siteName,
+  markdown,
+  crawlSiteName,
+  docSiteName,
+}: {
+  domain?: string;
+  url?: string;
+  siteName?: string;
+  markdown?: string | null;
+  crawlSiteName?: string;
+  docSiteName?: string;
+}): string {
+  if (markdown) {
+    const { title } = parseDesignMd(markdown);
+    if (title && title !== "Unknown") return title;
+  }
+  const named = [docSiteName, crawlSiteName, siteName]
+    .map((value) => value?.trim())
+    .find(Boolean);
+  if (named) return named;
+  if (domain?.trim()) return domain.trim();
+  if (url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  }
+  return "Run";
+}
+
 export function parseDesignMd(
   content: string,
 ): Pick<DesignRunPreview, "title" | "theme" | "accent"> {

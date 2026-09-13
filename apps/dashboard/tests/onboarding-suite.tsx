@@ -226,12 +226,22 @@ describe("extraction onboarding", () => {
     expect(html).not.toContain("hidden.example");
   });
 
-  test("completed runs have a visible, keyboard-accessible design.md download", () => {
+  test("completed runs have a visible, keyboard-accessible design export menu", () => {
     const html = renderToStaticMarkup(
-      <ExportActions content="# Fixture" filename="design.md" />,
+      <ExportActions content="# Fixture" siteName="Fixture" />,
     );
-    expect(html).toContain('aria-label="Download design.md"');
-    expect(html).toContain("Download design.md</button>");
+    expect(html).toContain('aria-label="Download"');
+    expect(html).toContain('aria-haspopup="menu"');
+    const actions = readFileSync(
+      new URL(
+        "../app/(dashboard)/runs/[slug]/export-actions.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(actions).toContain("Without images");
+    expect(actions).toContain("With images");
+    expect(actions).toContain(">Copy</DropdownMenuLabel>");
     const shell = readFileSync(
       new URL(
         "../app/(dashboard)/runs/[slug]/run-page-shell.tsx",
@@ -239,7 +249,7 @@ describe("extraction onboarding", () => {
       ),
       "utf8",
     );
-    expect(shell).toContain('filename="design.md"');
+    expect(shell).toContain("siteName={siteName}");
     expect(shell).toContain("{exportMarkdown ? (");
   });
 });

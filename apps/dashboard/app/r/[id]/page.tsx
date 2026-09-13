@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DesignDocument } from "@/components/design-document";
 import { loadPublicRun } from "@/lib/public-runs";
+import { artifactSiteName, runPageTitle } from "@/lib/design-run-preview";
 import { ExportActions } from "@/app/(dashboard)/runs/[slug]/export-actions";
 import { ScreenshotGallery } from "@/app/(dashboard)/runs/[slug]/gallery-panel";
 
@@ -15,14 +16,17 @@ export default async function PublicRunPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const run = await loadPublicRun(id);
   if (!run) notFound();
+  const siteName = runPageTitle({
+    domain: run.domain, url: run.url, markdown: run.markdown, docSiteName: artifactSiteName(run.doc),
+  });
 
   return (
     <main className="flex min-h-svh items-stretch">
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
           <a href="https://getdesign.app" className="text-sm font-semibold">getdesign</a>
-          <span className="min-w-0 truncate text-sm text-muted-foreground">{run.domain}</span>
-          <ExportActions content={run.markdown} filename="design.md" />
+          <span className="min-w-0 truncate text-sm text-muted-foreground" title={siteName}>{siteName}</span>
+          <ExportActions content={run.markdown} siteName={siteName} />
         </header>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/20 px-6 py-4 text-xs text-muted-foreground">
           <p>Public design · {run.mode === "text_only" ? "Text-only" : "Includes screenshots"}. Viewing and downloading use no provider keys.</p>

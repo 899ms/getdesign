@@ -4,8 +4,9 @@ On a completed run at `/runs/[id]`, choose **Publish run**, then **Copy link**.
 Runs are private until their owner publishes them. Existing runs need no migration.
 
 The public link is `/r/[id]`. Anyone can open it without an account or provider keys,
-read the document, view screenshots, copy Markdown, or download the document with
-embedded images or as an offline ZIP. Public runs are shared by link; they are not
+read the document, view screenshots, copy Markdown with or without embedded images,
+or download Markdown or an offline ZIP through the shared Download menu. Files use
+the site's name, such as `getdesign-resend.md`. Public runs are shared by link; they are not
 added to Examples or a searchable gallery.
 
 ## Agent access
