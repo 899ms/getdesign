@@ -10,9 +10,9 @@ export function CachedSites({ sites }: { sites: import("@/lib/cached-site-schema
     <section aria-labelledby="cached-sites-title" className="min-w-0">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="cached-sites-title" className="text-sm font-medium">Cached sites</h2>
+          <h2 id="cached-sites-title" className="text-sm font-medium">Examples</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Ready-to-use design systems from public sites. Open or download without running an extraction.
+            Cached design systems from public sites. Open or download without running an extraction.
           </p>
         </div>
         <span className="text-xs text-muted-foreground">{sites.length} available</span>

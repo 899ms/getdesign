@@ -20,7 +20,7 @@ export default async function CachedSitePage({ params }: {
       <div className="flex min-w-0 flex-1 flex-col">
       <header className="flex min-h-14 flex-wrap items-center gap-3 border-b px-4 py-3">
         <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
-          <Link href="/" className="text-muted-foreground hover:text-foreground">Overview</Link>
+          <Link href="/sites" className="text-muted-foreground hover:text-foreground">Examples</Link>
           <span aria-hidden="true" className="text-muted-foreground">/</span>
           <span className="truncate">{site.title}</span>
         </nav>

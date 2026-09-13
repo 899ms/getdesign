@@ -52,6 +52,11 @@ describe("dashboard navigation commands", () => {
         )
       ).toEqual(["/account"])
     }
+    expect(
+      NAV_COMMANDS.filter((item) => matchesNavigation(item, "cached sites")).map(
+        (item) => item.url
+      )
+    ).toEqual(["/sites"])
   })
 
   test("unmatched text returns no commands", () => {

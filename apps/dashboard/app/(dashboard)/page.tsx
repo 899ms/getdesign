@@ -1,6 +1,4 @@
 import Link from "next/link"
-import { loadCachedSites } from "@/lib/cached-sites"
-import { CachedSites } from "@/components/cached-sites"
 import { withAuth } from "@workos-inc/authkit-nextjs"
 import { redirect } from "next/navigation"
 import {
@@ -9,7 +7,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
-import { EmptyDesignRuns } from "@/components/extraction-guide"
+import { buttonVariants } from "@/components/ui/button"
 import { ExtractionOnboarding } from "@/components/extraction-onboarding"
 import { getConvexClient } from "@/lib/convex-server"
 import { api } from "@convex/_generated/api"
@@ -58,7 +56,6 @@ export default async function Page() {
     redirect("/sign-in")
   }
 
-  const cachedSites = await loadCachedSites(accessToken)
   const convex = getConvexClient(accessToken)
   const recent = await convex.query(api.designRuns.listRecent, {
     userId: user.id,
@@ -96,64 +93,67 @@ export default async function Page() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+        {runs.length > 0 ? (
+          <Link
+            href="/agent"
+            className={buttonVariants({
+              size: "lg",
+              className: "ml-auto",
+            })}
+          >
+            Extract
+          </Link>
+        ) : null}
       </header>
 
       <div className="flex flex-1 flex-col gap-6 p-6">
+        {runs.length === 0 ? <ExtractionOnboarding /> : null}
 
-        <ExtractionOnboarding />
-
-        <CachedSites sites={cachedSites} />
-
-        {/* Recent runs */}
-        <div className="rounded-xl border">
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-5 py-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Recent runs</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Completed runs with design files from your latest 24 runs.
+        {runs.length > 0 ? (
+          <div className="rounded-xl border">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-5 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Recent runs</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Completed runs with design files from your latest 24 runs.
+                </p>
+              </div>
+              <p className="shrink-0 text-xs text-muted-foreground">
+                {runs.length} shown
               </p>
             </div>
-            <p className="shrink-0 text-xs text-muted-foreground">
-              {runs.length} shown
-            </p>
+            <div className="divide-y">
+              {runs.map((run) => (
+                <Link
+                  key={run.slug}
+                  href={`/runs/${run.slug}`}
+                  className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors"
+                >
+                  {run.image ? <img src={run.image} alt={`${run.title} website screenshot`} loading="lazy" className="h-16 w-24 shrink-0 rounded-md border object-cover object-top sm:w-32" /> : <span className="flex h-16 w-24 shrink-0 items-center justify-center rounded-md border text-center text-xs text-muted-foreground sm:w-32">{run.textOnly ? "Text-only" : "Capture unavailable"}</span>}
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{run.title}</p>
+                    {run.theme && (
+                      <p className="text-xs text-muted-foreground truncate">{run.theme}</p>
+                    )}
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+                    <span
+                      className="size-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: run.accent }}
+                    />
+                    <span className="text-xs font-mono text-muted-foreground">{run.accent}</span>
+                  </div>
+
+                  <span className="hidden sm:block text-xs text-muted-foreground shrink-0 w-20 text-right">
+                    {run.colors.length} colors
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
-          <div className="divide-y">
-            {runs.length === 0 ? <EmptyDesignRuns /> : null}
-            {runs.map((run) => (
-              <Link
-                key={run.slug}
-                href={`/runs/${run.slug}`}
-                className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors"
-              >
-                {run.image ? <img src={run.image} alt={`${run.title} website screenshot`} loading="lazy" className="h-16 w-24 shrink-0 rounded-md border object-cover object-top sm:w-32" /> : <span className="flex h-16 w-24 shrink-0 items-center justify-center rounded-md border text-center text-xs text-muted-foreground sm:w-32">{run.textOnly ? "Text-only" : "Capture unavailable"}</span>}
-
-
-                {/* Title + theme */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{run.title}</p>
-                  {run.theme && (
-                    <p className="text-xs text-muted-foreground truncate">{run.theme}</p>
-                  )}
-                </div>
-
-                {/* Accent dot + hex */}
-                <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-                  <span
-                    className="size-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: run.accent }}
-                  />
-                  <span className="text-xs font-mono text-muted-foreground">{run.accent}</span>
-                </div>
-
-                {/* Color count */}
-                <span className="hidden sm:block text-xs text-muted-foreground shrink-0 w-20 text-right">
-                  {run.colors.length} colors
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
+        ) : null}
       </div>
     </>
   )

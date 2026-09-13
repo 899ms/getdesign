@@ -4,6 +4,7 @@ import Overview from "../../app/(dashboard)/page";
 import { ProviderKeysCard } from "../../app/(dashboard)/account/provider-keys-card";
 import { AgentCommand } from "../../app/(dashboard)/agent/agent-command";
 import { RunPageShell } from "../../app/(dashboard)/runs/[slug]/run-page-shell";
+import Sites from "../../app/(dashboard)/sites/page";
 import { hasRequiredRunCredentials } from "../../lib/credential-readiness";
 import { fixture, navigate, refresh } from "./onboarding-state";
 
@@ -37,6 +38,7 @@ window.fetch = (async (input, init) => {
 function App() {
   const [version, setVersion] = useState(0);
   const [overview, setOverview] = useState<ReactNode>(null);
+  const [sites, setSites] = useState<ReactNode>(null);
   const [download, setDownload] = useState("");
   const [lastKey, setLastKey] = useState("");
   useEffect(() => {
@@ -50,6 +52,7 @@ function App() {
   }, []);
   useEffect(() => {
     void Overview().then(setOverview);
+    void Sites().then(setSites);
   }, [version]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => setLastKey(event.key);
@@ -78,6 +81,7 @@ function App() {
         <button onClick={() => navigate("/")}>Overview</button>
         <button onClick={() => navigate("/account")}>Account</button>
         <button onClick={() => navigate("/agent")}>Agent</button>
+        <button onClick={() => navigate("/sites")}>Examples</button>
         <button
           onClick={() => {
             fixture.populated = !fixture.populated;
@@ -129,6 +133,8 @@ function App() {
             }
             runState={null}
           />
+        ) : path === "/sites" ? (
+          sites
         ) : (
           overview
         )}

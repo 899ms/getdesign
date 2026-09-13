@@ -59,7 +59,7 @@ export async function verifyCommandMenu(tab, { nativeKeyboard = true } = {}) {
   )
   check((await highlight()) === "Overview/", "First command highlighted")
   await search().press("ArrowDown")
-  check((await highlight()) === "Agent/agent", "ArrowDown chooses Agent")
+  check((await highlight()) === "Examples/sites", "ArrowDown chooses Examples")
   await search().press("ArrowUp")
   check((await highlight()) === "Overview/", "ArrowUp chooses Overview")
   await search().press("ArrowUp")
@@ -166,6 +166,7 @@ export async function verifyCommandMenu(tab, { nativeKeyboard = true } = {}) {
   const destinations = [
     ["Overview", "/"],
     ["Agent", "/agent"],
+    ["Examples", "/sites"],
     ["API", "/api"],
     ["CLI", "/cli"],
     ["SDK", "/sdk"],
@@ -177,7 +178,7 @@ export async function verifyCommandMenu(tab, { nativeKeyboard = true } = {}) {
   for (const [title, route] of destinations) {
     await origin().press("Meta+k")
     check(
-      (await tab.playwright.getByRole("option").count()) === 9,
+      (await tab.playwright.getByRole("option").count()) === 10,
       `Reopening clears search before ${title}`
     )
     await search().fill(title)

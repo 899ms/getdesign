@@ -20,7 +20,7 @@ const result = await Bun.build({
         build.onResolve(
           {
             filter:
-              /^(next\/link|next\/navigation|@workos-inc\/authkit-nextjs|convex\/react|@\/lib\/convex-server|@\/components\/extraction-onboarding)$/,
+              /^(next\/link|next\/navigation|@workos-inc\/authkit-nextjs|convex\/react|.*\/convex-server|@\/components\/extraction-onboarding)$/,
           },
           () => ({ path: shims }),
         );

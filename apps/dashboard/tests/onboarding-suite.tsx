@@ -29,7 +29,7 @@ mock.module("convex/react", () => ({
 
 const { ExtractionOnboarding } =
   await import("../components/extraction-onboarding");
-const { ExtractionGuide, EmptyDesignRuns } =
+const { ExtractionGuide } =
   await import("../components/extraction-guide");
 const { ProviderKeysCard } =
   await import("../app/(dashboard)/account/provider-keys-card");
@@ -71,10 +71,11 @@ describe("extraction onboarding", () => {
       const html = renderToStaticMarkup(await ExtractionOnboarding());
       expect(getConvexClient).toHaveBeenCalledWith("fixture-token");
       expect(query).toHaveBeenCalledWith(expect.anything(), {});
-      expect(html).toContain('href="/agent"');
-      expect(html).toContain("Extract a design system");
+      expect(html.includes('href="/agent"')).toBe(ready);
+      expect(html.includes("Extract a design system")).toBe(ready);
       expect(html.includes('href="/account#provider-keys"')).toBe(!ready);
-      expect(html.includes("Both provider keys are saved")).toBe(ready);
+      expect(html.includes('href="/sites"')).toBe(!ready);
+      expect(html.includes("Open an example")).toBe(!ready);
       expect(html).not.toContain("fixture-token");
       expect(html).not.toContain("demo");
 
@@ -104,21 +105,21 @@ describe("extraction onboarding", () => {
     });
   }
 
-  test("the CTA is unconditional and before recent runs; empty state appears only without completed runs", () => {
+  test("Overview shows onboarding only without completed runs and hides the empty recent-run list", () => {
     const page = readFileSync(
       new URL("../app/(dashboard)/page.tsx", import.meta.url),
       "utf8",
     );
-    expect(page.indexOf("<ExtractionOnboarding />")).toBeLessThan(
-      page.indexOf("{/* Recent runs */}"),
-    );
-    expect(page).toContain("{runs.length === 0 ? <EmptyDesignRuns /> : null}");
-    expect(renderToStaticMarkup(<EmptyDesignRuns />)).toContain(
-      "No completed design systems yet",
-    );
+    expect(page).toContain("{runs.length === 0 ? <ExtractionOnboarding /> : null}");
+    expect(page).toContain("{runs.length > 0 ? (");
+    expect(page).not.toContain("<CachedSites");
+    expect(page).not.toContain("EmptyDesignRuns");
     expect(
       renderToStaticMarkup(<ExtractionGuide credentialsReady={false} />),
-    ).toContain("download design.md");
+    ).toContain("Open an example");
+    expect(
+      renderToStaticMarkup(<ExtractionGuide credentialsReady />),
+    ).toContain('href="/agent"');
   });
 
   test("the Agent allows URL lookup without keys and explains new extraction requirements", () => {
@@ -126,10 +127,11 @@ describe("extraction onboarding", () => {
       const html = renderToStaticMarkup(
         <AgentCommand credentialsReady={ready} user={{ id: "fixture-user" }} />,
       );
-      expect(html).toContain("download design.md");
-      expect(html.includes("Set up provider keys")).toBe(!ready);
+      expect(html).not.toContain("download design.md");
+      expect(html).not.toContain("Set up provider keys");
       expect(/<textarea[^>]*disabled=""/.test(html)).toBe(false);
-      if (!ready) expect(html).toContain("Cached sites are ready to open.");
+      expect(html.includes("Add provider keys")).toBe(!ready);
+      expect(html).not.toContain("Cached sites are ready to open.");
       expect(html).toContain('aria-label="Start extraction"');
     }
   });

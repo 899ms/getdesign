@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import { getFunctionName } from "convex/server";
 import { ExtractionGuide } from "../../components/extraction-guide";
 import { hasRequiredRunCredentials } from "../../lib/credential-readiness";
+import { listCachedSites } from "../../lib/cached-sites";
 import { fixture, navigate, refresh } from "./onboarding-state";
 
 export default function Link({
@@ -48,6 +49,9 @@ export function useConvexAuth() {
 export function useQuery() {
   return [];
 }
+export function useConvex() {
+  return { query: async () => null };
+}
 export function getConvexClient() {
   return {
     async query(reference: Parameters<typeof getFunctionName>[0]) {
@@ -64,11 +68,16 @@ export function getConvexClient() {
             : [];
         case "designRunArtifacts:getForRun":
           return { markdown: fixture.markdown };
+        case "designRunArtifacts:getTileUrls":
+          return [];
         case "userCredentials:listForUser":
           return fixture.keys;
+        case "cachedSites:list":
+          return listCachedSites();
         default:
           throw new Error("Unexpected query in local fixture");
       }
     },
   };
 }
+

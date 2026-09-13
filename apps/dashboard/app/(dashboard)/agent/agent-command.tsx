@@ -67,21 +67,14 @@ export function AgentCommand({ credentialsReady, user, cachedSites = [], refresh
 
   return (
     <div className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-xl flex-col justify-center px-4 py-8">
-      <div className="mb-8 flex flex-col items-center text-center">
+      <div className="mb-8 flex justify-center">
         <BrandMark size={34} />
-        <p className="mt-4 text-lg font-medium tracking-tight text-foreground">
-          Extract a design system
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Enter a public website URL. When the run finishes, download design.md
-          from the run page.
-        </p>
       </div>
 
       {useCached ? (
         <p className="mb-3 text-center text-xs text-muted-foreground">A cached design is ready. Opening it uses no provider credits.</p>
       ) : !credentialsReady ? (
-        <p className="mb-3 text-center text-xs text-muted-foreground"><Link href="/account#provider-keys" className="underline underline-offset-4">Add provider keys</Link> to start a new extraction. Cached sites are ready to open.</p>
+        <p className="mb-3 text-center text-xs text-muted-foreground"><Link href="/account#provider-keys" className="underline underline-offset-4">Add provider keys</Link> to start a new extraction.</p>
       ) : refreshSite && cached?.slug === refreshSite.slug ? (
         <p className="mb-3 text-center text-xs text-muted-foreground">This starts a fresh extraction using your provider keys. The shared snapshot stays available.</p>
       ) : null}
@@ -142,19 +135,6 @@ export function AgentCommand({ credentialsReady, user, cachedSites = [], refresh
             }
           });
         }}
-        infoBar={
-          !credentialsReady
-            ? {
-                title: "Setup needed.",
-                description:
-                  "Add both Daytona and OpenAI keys on Account before starting a visual run.",
-                action: {
-                  label: "Set up provider keys",
-                  onClick: () => router.push("/account#provider-keys"),
-                },
-              }
-            : undefined
-        }
       />
 
       {error ? (

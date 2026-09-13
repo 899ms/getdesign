@@ -2,6 +2,7 @@ import type { IconSvgElement } from "@hugeicons/react"
 import {
   DashboardBrowsingIcon,
   SparklesIcon,
+  GridViewIcon,
   ApiIcon,
   ComputerTerminalIcon,
   CodeSquareIcon,
@@ -26,6 +27,12 @@ export const NAV_MAIN: NavItem[] = [
     keywords: "home dashboard",
   },
   { title: "Agent", url: "/agent", icon: SparklesIcon },
+  {
+    title: "Examples",
+    url: "/sites",
+    icon: GridViewIcon,
+    keywords: "cached sites catalog library",
+  },
   { title: "API", url: "/api", icon: ApiIcon },
   {
     title: "CLI",

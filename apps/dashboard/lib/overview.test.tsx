@@ -48,27 +48,28 @@ function completedRun(id: string): RunFixture {
 }
 
 describe("Overview recent-run summary", () => {
-  test("shows real shared snapshots without adding them to private run counts", async () => {
+  test("keeps the shared catalog off Overview", async () => {
     const html = renderToStaticMarkup(await Page());
-    expect(html).toContain("Cached sites");
-    expect(html).toContain('href="/sites/linear"');
-    expect(html).toContain("Captured");
-    expect(html).toContain("0 shown");
-    expect((html.match(/href="\/sites\//g) ?? []).length).toBeGreaterThanOrEqual(10);
+    expect(html).not.toContain("Cached sites");
+    expect(html).not.toContain('href="/sites/linear"');
+    expect(html).not.toContain("Recent runs");
+    expect(html).not.toContain("0 shown");
+    expect(html).toContain('href="/account#provider-keys"');
+    expect(html).toContain('href="/sites"');
   });
 
   test("authenticates the server's run queries with the WorkOS access token", async () => {
     await Page();
     expect(getConvexClient).toHaveBeenCalledWith("overview-token");
   });
-  test("keeps onboarding above recent runs and explains the empty state", async () => {
+  test("shows setup onboarding when there are no completed runs", async () => {
     const html = renderToStaticMarkup(await Page());
 
-    expect(html).toContain('href="/agent"');
-    expect(html).toContain("Extract a design system");
-    expect(html.indexOf("Extract a design system")).toBeLessThan(html.indexOf("Recent runs"));
-    expect(html).toContain("No completed design systems yet");
+    expect(html).toContain("Turn a website into a design system");
     expect(html).toContain('href="/account#provider-keys"');
+    expect(html).toContain('href="/sites"');
+    expect(html).not.toContain("Recent runs");
+    expect(html).not.toContain("No completed design systems yet");
   });
 
   test("removes unsupported statistics and the inactive View all control", async () => {
@@ -84,8 +85,7 @@ describe("Overview recent-run summary", () => {
     ]) {
       expect(html).not.toContain(removed);
     }
-    expect(html).toContain("Recent runs");
-    expect(html).toContain("0 shown");
+    expect(html).not.toContain("Recent runs");
   });
 
   test("counts only displayed completed runs with design files, scoped to the user", async () => {
@@ -105,8 +105,9 @@ describe("Overview recent-run summary", () => {
     for (const id of ["queued", "running", "failed", "missing"]) {
       expect(html).not.toContain(`href="/runs/${id}"`);
     }
+    expect(html).toContain("Extract");
+    expect(html).not.toContain("Turn a website into a design system");
     expect(query.mock.calls.map(([, args]) => args)).toEqual([
-      {},
       { userId: "overview-test-user", limit: 24 },
       { userId: "overview-test-user", runId: "visible" },
       { userId: "overview-test-user", runId: "missing" },
@@ -127,7 +128,16 @@ describe("Overview recent-run summary", () => {
 });
 
 
-test("a legacy cached row cannot crash Overview or display an image-free card", async () => {
+test("Examples lists shared snapshots without mixing them into private run counts", async () => {
+  const { default: SitesPage } = await import("../app/(dashboard)/sites/page");
+  const html = renderToStaticMarkup(await SitesPage());
+  expect(html).toContain("Examples");
+  expect(html).toContain('href="/sites/linear"');
+  expect(html).toContain("Captured");
+  expect((html.match(/href="\/sites\//g) ?? []).length).toBeGreaterThanOrEqual(10);
+});
+
+test("a legacy cached row cannot crash the catalog or display an image-free card", async () => {
   const { CachedSites } = await import("../components/cached-sites");
   const site = listCachedSites()[0]!;
   const broken = { ...site, slug: "legacy", images: [] };
