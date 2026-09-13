@@ -134,6 +134,7 @@ function App() {
         ) : path.startsWith("/runs/") ? (
           <RunPageShell
             runId="fixture-completed-run-with-a-long-identifier"
+            siteName="Fixture"
             userId="fixture-user"
             initialTiles={[]}
             exportMarkdown={fixture.markdown}

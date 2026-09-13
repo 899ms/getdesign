@@ -24,7 +24,7 @@ export default async function CachedSitePage({ params }: {
           <span aria-hidden="true" className="text-muted-foreground">/</span>
           <span className="truncate">{site.title}</span>
         </nav>
-        <div className="ml-auto"><ExportActions content={site.markdown} filename="design.md" /></div>
+        <div className="ml-auto"><ExportActions content={site.markdown} siteName={site.title} /></div>
       </header>
       <div className="flex flex-wrap items-center justify-between gap-4 border-b bg-muted/20 px-6 py-4">
         <div className="min-w-0 text-xs text-muted-foreground">

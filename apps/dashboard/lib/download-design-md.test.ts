@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { prepareDesignDownload } from "./download-design-md";
+import { exportFileStem, exportMarkdownFilename, exportZipFilename, prepareDesignDownload } from "./download-design-md";
+
+test("export files are named with getdesign branding and the site", () => {
+  expect(exportFileStem("Mohtasham's Portfolio")).toBe("getdesign-mohtashams-portfolio");
+  expect(exportMarkdownFilename("Linear")).toBe("getdesign-linear.md");
+  expect(exportZipFilename("Linear")).toBe("getdesign-linear.zip");
+  expect(exportFileStem("   ")).toBe("getdesign-design");
+});
 
 test("image downloads remain usable offline and fail instead of omitting unavailable captures", async () => {
   const original = globalThis.fetch;

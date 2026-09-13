@@ -1,91 +1,152 @@
 "use client"
 
-import { downloadDesignMd, downloadDesignBundle } from "@/lib/download-design-md"
 import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  ArrowDown01Icon,
   Copy01Icon,
   Download01Icon,
-  Tick02Icon,
 } from "@hugeicons/core-free-icons"
 
+import {
+  downloadDesignBundle,
+  downloadPlainMarkdown,
+  exportMarkdownFilename,
+  exportZipFilename,
+  prepareDesignDownload,
+} from "@/lib/download-design-md"
 import { Button } from "@/components/ui/button"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+function clipboardMarkdown(content: string) {
+  return content.replaceAll(
+    "](/cached-sites/",
+    `](${window.location.origin}/cached-sites/`,
+  )
+}
 
 export function ExportActions({
   content,
-  filename,
+  siteName,
 }: {
   content: string
-  filename: string
+  siteName: string
 }) {
   const [copied, setCopied] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hasImages = content.includes("![")
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(content.replaceAll("](/cached-sites/", `](${window.location.origin}/cached-sites/`))
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1500)
-    } catch {
-      // Clipboard write can fail in insecure contexts; silently ignore.
-    }
-  }
-
-  const handleDownload = async (bundle = false) => {
+  const handleCopy = async (withImages: boolean) => {
     setBusy(true)
     setError(null)
     try {
-      if (bundle) await downloadDesignBundle(content)
-      else await downloadDesignMd(content, filename)
-    } catch { setError("Download failed. Please retry.") }
-    finally { setBusy(false) }
+      const source = clipboardMarkdown(content)
+      const text = withImages
+        ? (await prepareDesignDownload(source, false)).markdown
+        : source
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1500)
+    } catch {
+      setError("Copy failed. Please retry.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleDownload = async (withImages: boolean) => {
+    setBusy(true)
+    setError(null)
+    try {
+      if (withImages) {
+        await downloadDesignBundle(
+          content,
+          exportZipFilename(siteName),
+          exportMarkdownFilename(siteName),
+        )
+      } else {
+        downloadPlainMarkdown(
+          clipboardMarkdown(content),
+          exportMarkdownFilename(siteName),
+        )
+      }
+    } catch {
+      setError("Download failed. Please retry.")
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
-    <TooltipProvider>
-      <div className="ml-auto flex flex-wrap items-center gap-1">
-        {error ? <span role="alert" className="text-xs text-destructive">{error}</span> : null}
-        {content.includes("![") ? <Button variant="outline" size="sm" disabled={busy} onClick={() => void handleDownload(true)}>Download with images</Button> : null}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={handleCopy}
-                aria-label={copied ? "Copied" : "Copy markdown"}
-              >
-                <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} />
-              </Button>
-            }
-          />
-          <TooltipContent>{copied ? "Copied" : "Copy markdown"}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="outline"
-                size="sm"
+    <div className="ml-auto flex items-center gap-2">
+      {error ? <span role="alert" className="text-xs text-destructive">{error}</span> : null}
+      {copied ? <span className="text-xs text-muted-foreground">Copied</span> : null}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          disabled={busy}
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Download"
+            />
+          }
+        >
+          <HugeiconsIcon icon={Download01Icon} />
+          Download
+          <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Download</DropdownMenuLabel>
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => void handleDownload(false)}
+            >
+              <HugeiconsIcon icon={Download01Icon} />
+              Without images
+            </DropdownMenuItem>
+            {hasImages ? (
+              <DropdownMenuItem
                 disabled={busy}
-                onClick={() => void handleDownload()}
-                aria-label="Download design.md"
+                onClick={() => void handleDownload(true)}
               >
                 <HugeiconsIcon icon={Download01Icon} />
-                Download design.md
-              </Button>
-            }
-          />
-          <TooltipContent>Download design.md</TooltipContent>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
+                With images
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Copy</DropdownMenuLabel>
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => void handleCopy(false)}
+            >
+              <HugeiconsIcon icon={Copy01Icon} />
+              Without images
+            </DropdownMenuItem>
+            {hasImages ? (
+              <DropdownMenuItem
+                disabled={busy}
+                onClick={() => void handleCopy(true)}
+              >
+                <HugeiconsIcon icon={Copy01Icon} />
+                With images
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }

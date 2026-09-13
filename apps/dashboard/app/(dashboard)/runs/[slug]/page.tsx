@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { withAuth } from "@workos-inc/authkit-nextjs"
 import { DesignDocument } from "@/components/design-document"
 import { getConvexClient } from "@/lib/convex-server"
+import { artifactSiteName, runPageTitle } from "@/lib/design-run-preview"
 import { toRunState } from "@/lib/runs-store"
 import { api } from "@convex/_generated/api"
 import type { Id } from "@convex/_generated/dataModel"
@@ -51,10 +52,20 @@ export default async function RunPage({
     <DesignDocument content={content} imagesInGallery />
   ) : null
 
+  const siteName = runPageTitle({
+    domain: typeof run.domain === "string" ? run.domain : undefined,
+    url: runState.url,
+    siteName: runState.siteName,
+    markdown: storedContent,
+    crawlSiteName: artifactSiteName(artifacts.crawl),
+    docSiteName: artifactSiteName(artifacts.doc),
+  })
+
   return (
     <RunPageShell
       key={slug}
       runId={slug}
+      siteName={siteName}
       userId={user.id}
       initialTiles={tiles}
       totalExpected={runState.tiles}

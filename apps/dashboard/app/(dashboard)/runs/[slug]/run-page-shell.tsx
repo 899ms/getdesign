@@ -29,6 +29,7 @@ import type { LightboxTile } from "./tile-lightbox";
  */
 export function RunPageShell({
   runId,
+  siteName,
   userId,
   initialTiles,
   totalExpected,
@@ -37,6 +38,7 @@ export function RunPageShell({
   runState,
 }: {
   runId: string;
+  siteName: string;
   userId: string;
   initialTiles: LightboxTile[];
   totalExpected?: number;
@@ -56,25 +58,25 @@ export function RunPageShell({
     <LayoutGroup id={`run-${runId}`}>
       <div className="flex min-h-svh flex-1 items-stretch">
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-2 border-b px-4 py-3">
-            <Breadcrumb>
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+            <Breadcrumb className="min-w-0">
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbLink href="/runs">Runs</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="max-w-40 truncate sm:max-w-64">{runId}</BreadcrumbPage>
+                  <BreadcrumbPage className="max-w-[16rem] truncate sm:max-w-sm" title={siteName}>
+                    {siteName}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
             {exportMarkdown ? (
-              <div className="ml-auto flex items-center gap-1">
-                <ExportActions
-                  content={exportMarkdown}
-                  filename="design.md"
-                />
-              </div>
+              <ExportActions
+                content={exportMarkdown}
+                siteName={siteName}
+              />
             ) : null}
           </header>
 
