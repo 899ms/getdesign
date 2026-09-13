@@ -1,5 +1,6 @@
 ---
 import Default from "@astrojs/starlight/components/Head.astro";
+import VtbotStarlight from "astro-vtbot/components/starlight/Base.astro";
 import { DOCS_ORIGIN as SITE_URL, MARKETING_ORIGIN as ORIGIN_URL } from "../lib/site";
 
 const { entry, id, head } = Astro.locals.starlightRoute;
@@ -38,6 +39,8 @@ const jsonLd = {
 };
 ---
 
-<Default />
+<VtbotStarlight>
+  <Default><slot /></Default>
+</VtbotStarlight>
 <meta name="theme-color" content="#0a0a0b" />
 <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")} />

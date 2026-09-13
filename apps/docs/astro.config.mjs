@@ -17,6 +17,10 @@ const sdkSidebar = generateSdkReference
 export default defineConfig({
   site: DOCS_ORIGIN,
   trailingSlash: "always",
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: "hover",
+  },
   build: {
     format: "directory",
   },

@@ -42,7 +42,31 @@ await getDesign("https://stripe.com", {
   ...options,
   siteName: "Stripe",
   visualRequirement: "require",
+  installI18nFonts: true,
+  measurementMode: "auto",
 });
 ```
+
+`visualRequirement` defaults to `"require"`. Pass `"text_only_fallback"` to skip screenshots on purpose. Capture failure otherwise throws.
+
+## Images
+
+Visual results include `images`, an array of hero and full-page WebP captures with `path`, `alt`, `mimeType`, `imageBase64`, `width`, and `height`. Markdown references those relative paths. Write both the document and the files:
+
+```ts
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+
+const output = "./design-output";
+await mkdir(output, { recursive: true });
+for (const image of result.images) {
+  const path = join(output, image.path);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, Buffer.from(image.imageBase64, "base64"));
+}
+await writeFile(join(output, "design.md"), result.markdown);
+```
+
+`streamDesign` includes the same files on the final `result`. Progress events stay small and contain no image bytes.
 
 Full auto-generated reference lives at [SDK reference](/reference/sdk/).

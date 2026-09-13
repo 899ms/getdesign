@@ -9,5 +9,25 @@ editUrl: false
 > Extracted from `@getdesign/cli --help`.
 
 ```text
-The CLI entry at /home/azureuser/getdesign-pr26/packages/cli/bin/getdesign.mjs was not found. This placeholder will be replaced once the CLI ships.
+getdesign — generate a design.md from any public URL
+
+Usage:
+  getdesign <url> [options]
+  getdesign --url <url> [options]
+
+Options:
+  --url <url>                 Source URL to analyze
+  --site-name <name>          Override the detected site name
+  --out <path>                Output file or directory (default: ./getdesign-runs/<slug>/design.md)
+  --daytona-api-key <key>     Daytona key for this run (or DAYTONA_API_KEY)
+  --openai-api-key <key>      OpenAI key for this run (or OPENAI_API_KEY)
+  --text-only-fallback        Explicitly skip screenshots (text-only output)
+  --help, -h                  Show help
+  --version, -v               Show version
+
+Examples:
+  getdesign https://linear.app
+  getdesign https://linear.app --out design.md
+  getdesign --url https://cursor.com --site-name Cursor --out ./designs
+  DAYTONA_API_KEY=... OPENAI_API_KEY=... getdesign https://example.com
 ```

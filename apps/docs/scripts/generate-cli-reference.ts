@@ -13,7 +13,8 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DOCS_ROOT = resolve(HERE, "..");
 const REPO_ROOT = resolve(DOCS_ROOT, "..", "..");
-const CLI_ENTRY = join(REPO_ROOT, "packages", "cli", "bin", "getdesign.mjs");
+const CLI_SRC = join(REPO_ROOT, "packages", "cli", "src", "getdesign.ts");
+const CLI_DIST = join(REPO_ROOT, "packages", "cli", "dist", "getdesign.js");
 const OUT_DIR = join(DOCS_ROOT, "src", "content", "docs", "reference", "cli");
 
 type CliPage = {
@@ -37,22 +38,40 @@ function stripAnsi(input: string): string {
   return input.replace(/\u001b\[[0-9;]*m/g, "");
 }
 
+function resolveCliEntry(): { command: string; entry: string } | null {
+  if (existsSync(CLI_SRC)) {
+    return { command: "bun", entry: CLI_SRC };
+  }
+  if (existsSync(CLI_DIST)) {
+    return { command: "bun", entry: CLI_DIST };
+  }
+  return null;
+}
+
 function runHelp(args: readonly string[]): string {
-  if (!existsSync(CLI_ENTRY)) {
-    return `The CLI entry at ${CLI_ENTRY} was not found. This placeholder will be replaced once the CLI ships.`;
+  const resolved = resolveCliEntry();
+  if (!resolved) {
+    throw new Error(
+      `CLI entry not found. Expected ${CLI_SRC} or ${CLI_DIST}.`,
+    );
   }
 
-  const result = spawnSync("node", [CLI_ENTRY, ...args], {
+  const result = spawnSync(resolved.command, [resolved.entry, ...args], {
     encoding: "utf8",
     timeout: 15_000,
+    cwd: join(REPO_ROOT, "packages", "cli"),
   });
 
   if (result.error) {
-    return `Failed to invoke CLI: ${result.error.message}`;
+    throw new Error(`Failed to invoke CLI: ${result.error.message}`);
   }
 
   const combined = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim();
-  return combined.length > 0 ? stripAnsi(combined) : "No output captured.";
+  if (!combined) {
+    throw new Error("CLI --help produced no output.");
+  }
+
+  return stripAnsi(combined);
 }
 
 function renderPage(page: CliPage, output: string): string {

@@ -315,4 +315,10 @@ footer {
   .pagination-links a:hover {
     transform: none;
   }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

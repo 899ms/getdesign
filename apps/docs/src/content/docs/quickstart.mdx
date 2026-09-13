@@ -9,7 +9,7 @@ For a visual run, bring your own Daytona and OpenAI keys. V1 has no getdesign ru
 
 <Tabs>
   <TabItem label="Web">
-    Open the [dashboard](https://dashboard.getdesign.app), sign in, and save both provider keys in Account. Then paste a URL to generate a `design.md`.
+    Open the [dashboard](https://dashboard.getdesign.app), sign in, and save both provider keys under Settings → Provider keys. Then open Agent and paste a URL to generate a `design.md`.
   </TabItem>
   <TabItem label="API">
     ```bash
@@ -27,7 +27,7 @@ For a visual run, bring your own Daytona and OpenAI keys. V1 has no getdesign ru
     bunx @getdesign/cli https://stripe.com
     bunx @getdesign/cli https://stripe.com --out stripe.design.md
     ```
-    Requires Bun, with `DAYTONA_API_KEY` and `OPENAI_API_KEY` set in your shell. No WorkOS token is needed. Default output is `./getdesign-runs/<slug>/design.md`; there is no interactive REPL.
+    Requires Bun, with `DAYTONA_API_KEY` and `OPENAI_API_KEY` set in your shell. No WorkOS token is needed. Default output is `./getdesign-runs/<slug>/design.md` plus a sibling `design.images/` folder. There is no interactive REPL.
   </TabItem>
   <TabItem label="SDK">
     ```bash
@@ -52,13 +52,13 @@ For a visual run, bring your own Daytona and OpenAI keys. V1 has no getdesign ru
       if (event.type === "error") throw new Error(event.error.error);
     }
     ```
-    Run either example on a Bun server. Each call starts a separate provider-funded run. The SDK executes locally, not through the hosted API, and does not need a WorkOS token. It is not a browser or edge-runtime client.
+    Run either example on a Bun server. Each call starts a separate provider-funded run. The SDK executes locally, not through the hosted API, and does not need a WorkOS token. It is not a browser or edge-runtime client. Visual results include `result.images` alongside the markdown.
   </TabItem>
   <TabItem label="Skill">
     Inside Claude Code, Codex, or Cursor:
 
     ```bash
-    skills add MohtashamMurshid/getdesign
+    npx skills add MohtashamMurshid/getdesign
     ```
 
     Then ask your agent: "use the getdesign skill on https://linear.app".
