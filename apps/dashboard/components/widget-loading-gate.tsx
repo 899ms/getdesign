@@ -2,7 +2,7 @@
 
 import { useIsFetching } from "@tanstack/react-query";
 
-import { DashboardLoader } from "@/components/dashboard-loader";
+import { WidgetFallback } from "@/components/dashboard-skeletons";
 
 export function WidgetLoadingGate({ children }: { children: React.ReactNode }) {
   const isFetching = useIsFetching();
@@ -10,7 +10,7 @@ export function WidgetLoadingGate({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {loading ? <DashboardLoader /> : null}
+      {loading ? <WidgetFallback /> : null}
       <div style={{ display: loading ? "none" : "contents" }}>{children}</div>
     </>
   );

@@ -13,9 +13,7 @@ import { getConvexClient } from "@/lib/convex-server";
 import {
   loadRecentRunPreviews,
   RUNS_PAGE_QUERY_LIMIT,
-  type ListedDesignRun,
 } from "@/lib/design-run-preview";
-import { api } from "@convex/_generated/api";
 
 export default async function RunsPage() {
   const { user, accessToken } = await withAuth();
@@ -25,11 +23,9 @@ export default async function RunsPage() {
   }
 
   const convex = getConvexClient(accessToken);
-  const recent = (await convex.query(api.designRuns.listRecent, {
-    userId: user.id,
-    limit: RUNS_PAGE_QUERY_LIMIT,
-  })) as ListedDesignRun[];
-  const runs = await loadRecentRunPreviews(convex, user.id, recent);
+  const runs = await loadRecentRunPreviews(convex, user.id, {
+    queryLimit: RUNS_PAGE_QUERY_LIMIT,
+  });
 
   return (
     <>

@@ -6,7 +6,15 @@ import { ExtractionGuide } from "@/components/extraction-guide";
 import { hasRequiredRunCredentials } from "@/lib/credential-readiness";
 import { getConvexClient } from "@/lib/convex-server";
 
-export async function ExtractionOnboarding() {
+export async function ExtractionOnboarding({
+  credentialsReady,
+}: {
+  credentialsReady?: boolean;
+} = {}) {
+  if (credentialsReady !== undefined) {
+    return <ExtractionGuide credentialsReady={credentialsReady} />;
+  }
+
   const { accessToken, user } = await withAuth();
   if (!user || !accessToken) redirect("/sign-in");
 

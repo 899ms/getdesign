@@ -22,22 +22,15 @@ export default async function RunPage({
   }
 
   const convex = getConvexClient(accessToken)
-  const run = await convex.query(api.designRuns.get, {
+  const page = await convex.query(api.designRuns.getPage, {
     id: slug as Id<"designRuns">,
     userId: user.id,
   })
 
-  if (!run) notFound()
+  if (!page) notFound()
 
+  const { run, artifacts, tiles } = page
   const runState = toRunState(run)
-  const artifacts = await convex.query(api.designRunArtifacts.getForRun, {
-    runId: slug as Id<"designRuns">,
-    userId: user.id,
-  })
-  const tiles = await convex.query(api.designRunArtifacts.getTileUrls, {
-    runId: slug as Id<"designRuns">,
-    userId: user.id,
-  })
 
   const storedContent =
     runState.status === "completed" && typeof artifacts.markdown === "string"

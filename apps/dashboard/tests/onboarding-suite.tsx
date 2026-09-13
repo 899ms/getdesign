@@ -40,6 +40,15 @@ mock.module("@/lib/convex-server", () => ({ getConvexClient }));
 mock.module("../lib/convex-server", () => ({ getConvexClient }));
 mock.module("convex/react", () => ({
   useMutation: () => mock(),
+  useQuery: (reference: unknown, args: Record<string, unknown> | "skip") => {
+    if (args === "skip") return undefined;
+    const name = getFunctionName(reference as Parameters<typeof getFunctionName>[0]);
+    if (name === "userCredentials:listForUser") return storedKeys;
+    if (name === "designRuns:listRecent") {
+      return recentRuns.slice(0, Number(args.limit ?? 3));
+    }
+    return undefined;
+  },
   useConvexAuth: () => ({ isAuthenticated: convexAuthenticated, isLoading: !convexAuthenticated }),
 }));
 
@@ -51,6 +60,9 @@ const { ProviderKeysCard } =
   await import("../app/(dashboard)/account/provider-keys-card");
 const { AgentCommand } = await import("../app/(dashboard)/agent/agent-command");
 const { default: AgentPage } = await import("../app/(dashboard)/agent/page");
+const { AgentRecentRunsLoader } = await import(
+  "../app/(dashboard)/agent/agent-recent-runs"
+);
 const { ExportActions } =
   await import("../app/(dashboard)/runs/[slug]/export-actions");
 
@@ -128,7 +140,9 @@ describe("extraction onboarding", () => {
       new URL("../app/(dashboard)/page.tsx", import.meta.url),
       "utf8",
     );
-    expect(page).toContain("{runs.length === 0 ? <ExtractionOnboarding /> : null}");
+    expect(page).toContain(
+      "{runs.length === 0 ? <ExtractionOnboarding credentialsReady={credentialsReady} /> : null}",
+    );
     expect(page).toContain("<RecentRuns");
     expect(page).toContain('href="/runs"');
     expect(page).toContain("<CachedSites");
@@ -204,26 +218,34 @@ describe("extraction onboarding", () => {
     const html = renderToStaticMarkup(
       await AgentPage({ searchParams: Promise.resolve({}) }),
     );
-    expect(getConvexClient).toHaveBeenCalledWith("fixture-token");
-    expect(query.mock.calls.map(([reference, args]) => [
-      getFunctionName(reference as Parameters<typeof getFunctionName>[0]),
-      args,
-    ])).toEqual([
-      ["userCredentials:listForUser", {}],
-      ["cachedSites:list", {}],
-      ["designRuns:listRecent", { userId: "fixture-user", limit: 3 }],
-    ]);
     expect(html).not.toContain("Examples");
     expect(html).not.toContain('href="/sites/linear"');
     const suggested = listCachedSites().filter(site => html.includes(`>${site.title}</button>`));
     expect(suggested).toHaveLength(3);
     expect(html).toContain("Recent");
     expect(html).toContain('href="/runs"');
-    expect(html).toContain('href="/runs/newest"');
-    expect(html).toContain("Running");
-    expect(html).toContain('href="/runs/oldest"');
-    expect(html).not.toContain('href="/runs/hidden"');
-    expect(html).not.toContain("hidden.example");
+
+    getConvexClient.mockClear();
+    query.mockClear();
+    const runs = renderToStaticMarkup(
+      await AgentRecentRunsLoader({
+        userId: "fixture-user",
+        accessToken: "fixture-token",
+      }),
+    );
+    expect(getConvexClient).toHaveBeenCalledWith("fixture-token");
+    expect(query.mock.calls.map(([reference, args]) => [
+      getFunctionName(reference as Parameters<typeof getFunctionName>[0]),
+      args,
+    ])).toEqual([
+      ["designRuns:listRecent", { userId: "fixture-user", limit: 3 }],
+    ]);
+    expect(runs).toContain("Recent");
+    expect(runs).toContain('href="/runs/newest"');
+    expect(runs).toContain("Running");
+    expect(runs).toContain('href="/runs/oldest"');
+    expect(runs).not.toContain('href="/runs/hidden"');
+    expect(runs).not.toContain("hidden.example");
   });
 
   test("completed runs have a visible, keyboard-accessible design export menu", () => {

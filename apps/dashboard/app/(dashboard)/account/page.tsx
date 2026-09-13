@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { UserProfile } from "@workos-inc/widgets";
 import { redirect } from "next/navigation";
@@ -5,6 +6,7 @@ import { redirect } from "next/navigation";
 import { api } from "@convex/_generated/api";
 import { WidgetLoadingGate } from "@/components/widget-loading-gate";
 import { WorkOsWidgetsProvider } from "@/components/workos-widgets-provider";
+import { ProviderKeysSkeleton } from "@/components/dashboard-skeletons";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,17 +19,26 @@ import { hasRequiredRunCredentials } from "@/lib/credential-readiness";
 import { DeveloperSurfaces } from "./developer-surfaces";
 import { ProviderKeysCard } from "./provider-keys-card";
 
+async function ProviderKeys({ accessToken }: { accessToken: string }) {
+  const keys = await getConvexClient(accessToken).query(
+    api.userCredentials.listForUser,
+    {},
+  );
+
+  return (
+    <ProviderKeysCard
+      keys={keys}
+      credentialsReady={hasRequiredRunCredentials(keys)}
+    />
+  );
+}
+
 export default async function AccountPage() {
   const { accessToken, user } = await withAuth();
 
   if (!user || !accessToken) {
     redirect("/sign-in");
   }
-
-  const keys = await getConvexClient(accessToken).query(
-    api.userCredentials.listForUser,
-    {},
-  );
 
   return (
     <>
@@ -43,10 +54,9 @@ export default async function AccountPage() {
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <ProviderKeysCard
-          keys={keys}
-          credentialsReady={hasRequiredRunCredentials(keys)}
-        />
+        <Suspense fallback={<ProviderKeysSkeleton />}>
+          <ProviderKeys accessToken={accessToken} />
+        </Suspense>
         <DeveloperSurfaces />
         <WorkOsWidgetsProvider>
           <WidgetLoadingGate>

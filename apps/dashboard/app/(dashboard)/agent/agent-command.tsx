@@ -3,10 +3,11 @@
 import { getAnalytics } from "@getdesign/analytics";
 import Link from "next/link";
 import { findCachedSite } from "@/lib/cached-site-url";
+import { hasRequiredRunCredentials } from "@/lib/credential-readiness";
 import { runStatusLabel, type RunStatus } from "@/lib/design-run-preview";
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useConvexAuth, useMutation } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 
 import { InputBar } from "@/components/agent-elements/input-bar";
 import { BrandMark } from "@/components/brand-mark";
@@ -20,11 +21,12 @@ type AgentCommandProps = {
   exampleSuggestions?: CachedExample[];
   recentRuns?: { id: string; domain: string; status: RunStatus }[];
   refreshSite?: { slug: string; url: string } | null;
-  credentialsReady: boolean;
+  credentialsReady?: boolean;
   user: {
     id: string;
     email?: string;
   };
+  children?: ReactNode;
 };
 
 type RunStep =
@@ -59,16 +61,26 @@ function isProbablyUrl(value: string) {
 }
 
 export function AgentCommand({
-  credentialsReady,
+  credentialsReady: credentialsReadyProp,
   user,
   cachedSites = [],
   exampleSuggestions,
   recentRuns = [],
   refreshSite = null,
+  children,
 }: AgentCommandProps) {
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
   const createRun = useMutation(api.designRuns.create);
+  const keys = useQuery(
+    api.userCredentials.listForUser,
+    credentialsReadyProp === undefined && isAuthenticated ? {} : "skip",
+  );
+  const credentialsKnown =
+    credentialsReadyProp !== undefined || keys !== undefined;
+  const credentialsReady =
+    credentialsReadyProp ??
+    (Array.isArray(keys) ? hasRequiredRunCredentials(keys) : false);
   const [input, setInput] = useState(refreshSite?.url ?? "");
   const cached = findCachedSite(input, cachedSites);
   const useCached = cached && cached.slug !== refreshSite?.slug;
@@ -92,7 +104,7 @@ export function AgentCommand({
 
       {useCached ? (
         <p className="mb-3 text-center text-xs text-muted-foreground">A cached design is ready. Opening it uses no provider credits.</p>
-      ) : !credentialsReady ? (
+      ) : credentialsKnown && !credentialsReady ? (
         <p className="mb-3 text-center text-xs text-muted-foreground"><Link href="/account#provider-keys" className="underline underline-offset-4">Add provider keys</Link> to start a new extraction.</p>
       ) : refreshSite && cached?.slug === refreshSite.slug ? (
         <p className="mb-3 text-center text-xs text-muted-foreground">This starts a fresh extraction using your provider keys. The shared snapshot stays available.</p>
@@ -165,12 +177,12 @@ export function AgentCommand({
       ) : null}
       {run ? <RunProgress run={run} /> : null}
 
-      <AgentRecentRuns runs={recentRuns} />
+      {children ?? <AgentRecentRuns runs={recentRuns} />}
     </div>
   );
 }
 
-function AgentRecentRuns({
+export function AgentRecentRuns({
   runs,
 }: {
   runs: { id: string; domain: string; status: RunStatus }[];

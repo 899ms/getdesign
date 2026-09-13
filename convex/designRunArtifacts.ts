@@ -3,6 +3,10 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { requireMatchingWorkOsUserId } from "./workosAuth";
+import {
+  loadArtifactsForRun,
+  loadTileUrlsForRun,
+} from "./lib/runPreviews";
 
 const artifactKindSchema = v.union(
   v.literal("crawl"),
@@ -33,35 +37,7 @@ export const getForRun = query({
   returns: v.any(),
   handler: async (ctx, args) => {
     await assertOwnedRun(ctx, args.runId, args.userId);
-    const rows = await ctx.db
-      .query("designRunArtifacts")
-      .withIndex("by_run", (q) => q.eq("runId", args.runId))
-      .collect();
-
-    const artifacts: Record<string, unknown> = {
-      crawl: null,
-      visual: null,
-      description: null,
-      tokens: null,
-      doc: null,
-      markdown: null,
-    };
-
-    for (const row of rows) {
-      const storageUrl = row.storageId
-        ? await ctx.storage.getUrl(row.storageId)
-        : null;
-      if (row.kind === "description" || row.kind === "markdown") {
-        artifacts[row.kind] = row.text ?? storageUrl ?? null;
-      } else {
-        artifacts[row.kind] =
-          row.value && storageUrl
-            ? { ...row.value, __storageUrl: storageUrl }
-            : (row.value ?? (storageUrl ? { __storageUrl: storageUrl } : null));
-      }
-    }
-
-    return artifacts;
+    return await loadArtifactsForRun(ctx, args.runId);
   },
 });
 
@@ -80,32 +56,7 @@ export const getTileUrls = query({
   ),
   handler: async (ctx, args) => {
     await assertOwnedRun(ctx, args.runId, args.userId);
-    const visual = await ctx.db
-      .query("designRunArtifacts")
-      .withIndex("by_run_kind", (q) =>
-        q.eq("runId", args.runId).eq("kind", "visual"),
-      )
-      .unique();
-
-    const tiles = visual?.value?.tiles;
-    if (!Array.isArray(tiles)) return [];
-
-    const withUrls = await Promise.all(
-      tiles.map(async (tile) => {
-        const storageId = tile.storageId;
-        if (!storageId) return null;
-        const url = await ctx.storage.getUrl(storageId);
-        if (!url) return null;
-        return {
-          file: String(tile.file),
-          width: Number(tile.width),
-          height: Number(tile.height),
-          url,
-        };
-      }),
-    );
-
-    return withUrls.filter((tile): tile is NonNullable<typeof tile> => tile !== null);
+    return await loadTileUrlsForRun(ctx, args.runId);
   },
 });
 

@@ -13,11 +13,11 @@ import { ExtractionOnboarding } from "@/components/extraction-onboarding"
 import { RecentRuns } from "@/components/recent-runs"
 import { loadCachedSites } from "@/lib/cached-sites"
 import { getConvexClient } from "@/lib/convex-server"
+import { hasRequiredRunCredentials } from "@/lib/credential-readiness"
 import {
   loadRecentRunPreviews,
   OVERVIEW_RUN_DISPLAY_LIMIT,
   OVERVIEW_RUN_QUERY_LIMIT,
-  type ListedDesignRun,
 } from "@/lib/design-run-preview"
 import { api } from "@convex/_generated/api"
 
@@ -31,25 +31,19 @@ export default async function Page() {
   }
 
   const convex = getConvexClient(accessToken)
-  const [recent, summary, sites] = await Promise.all([
-    convex.query(api.designRuns.listRecent, {
-      userId: user.id,
-      limit: OVERVIEW_RUN_QUERY_LIMIT,
+  const [runs, summary, sites, keys] = await Promise.all([
+    loadRecentRunPreviews(convex, user.id, {
+      queryLimit: OVERVIEW_RUN_QUERY_LIMIT,
+      requireDesignFile: true,
+      limit: OVERVIEW_RUN_DISPLAY_LIMIT,
     }),
     convex.query(api.designRuns.summarizeForUser, {
       userId: user.id,
     }),
     loadCachedSites(accessToken),
+    convex.query(api.userCredentials.listForUser, {}),
   ])
-  const runs = await loadRecentRunPreviews(
-    convex,
-    user.id,
-    recent as ListedDesignRun[],
-    {
-      requireDesignFile: true,
-      limit: OVERVIEW_RUN_DISPLAY_LIMIT,
-    },
-  )
+  const credentialsReady = hasRequiredRunCredentials(keys)
 
   return (
     <>
@@ -100,7 +94,7 @@ export default async function Page() {
           </div>
         </section>
 
-        {runs.length === 0 ? <ExtractionOnboarding /> : null}
+        {runs.length === 0 ? <ExtractionOnboarding credentialsReady={credentialsReady} /> : null}
 
         <RecentRuns runs={runs} preview />
 

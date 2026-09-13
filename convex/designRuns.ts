@@ -7,6 +7,11 @@ import {
   textOnlyResumePatch,
   textOnlyResumeRejection,
 } from "./designRunPolicy";
+import {
+  listRecentPreviewsForUser,
+  loadArtifactsForRun,
+  loadTileUrlsForRun,
+} from "./lib/runPreviews";
 import { requireMatchingWorkOsUserId, requireWorkOsUserId } from "./workosAuth";
 
 const stepSchema = v.union(
@@ -154,6 +159,72 @@ export const listRecent = query({
       .take(limit);
 
     return rows.filter((run) => !run.deletedAt);
+  },
+});
+
+const runPreviewValidator = v.object({
+  slug: v.string(),
+  domain: v.string(),
+  status: runStatusSchema,
+  title: v.string(),
+  theme: v.string(),
+  accent: v.string(),
+  image: v.union(v.string(), v.null()),
+  textOnly: v.boolean(),
+});
+
+const MAX_RECENT_PREVIEW_LIMIT = 48;
+
+export const listRecentPreviews = query({
+  args: {
+    userId: v.string(),
+    limit: v.optional(v.number()),
+    requireDesignFile: v.optional(v.boolean()),
+    displayLimit: v.optional(v.number()),
+  },
+  returns: v.array(runPreviewValidator),
+  handler: async (ctx, args) => {
+    const userId = await requireMatchingWorkOsUserId(ctx, args.userId);
+    const limit = Math.min(
+      Math.max(args.limit ?? 24, 1),
+      MAX_RECENT_PREVIEW_LIMIT,
+    );
+    return await listRecentPreviewsForUser(ctx, userId, {
+      limit,
+      requireDesignFile: args.requireDesignFile ?? false,
+      displayLimit: args.displayLimit,
+    });
+  },
+});
+
+const tileUrlValidator = v.object({
+  file: v.string(),
+  width: v.number(),
+  height: v.number(),
+  url: v.string(),
+});
+
+export const getPage = query({
+  args: {
+    id: v.id("designRuns"),
+    userId: v.string(),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      run: v.any(),
+      artifacts: v.any(),
+      tiles: v.array(tileUrlValidator),
+    }),
+  ),
+  handler: async (ctx, { id, userId }) => {
+    const run = await getOwnedRun(ctx, id, userId);
+    if (!run) return null;
+    const [artifacts, tiles] = await Promise.all([
+      loadArtifactsForRun(ctx, run._id),
+      loadTileUrlsForRun(ctx, run._id),
+    ]);
+    return { run, artifacts, tiles };
   },
 });
 

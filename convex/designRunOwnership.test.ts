@@ -10,6 +10,8 @@ const operations = [
   ["create", runs.create, { userId: "owner", url: "https://example.com" }],
   ["get", runs.get, { userId: "owner", id: "run" }],
   ["listRecent", runs.listRecent, { userId: "owner" }],
+  ["listRecentPreviews", runs.listRecentPreviews, { userId: "owner" }],
+  ["getPage", runs.getPage, { userId: "owner", id: "run" }],
   ["summarizeForUser", runs.summarizeForUser, { userId: "owner" }],
   ["markDeleted", runs.markDeleted, { userId: "owner", id: "run" }],
   ["beginStep", runs.beginStep, { userId: "owner", id: "run", step: "crawl", message: "Reading" }],
@@ -38,7 +40,10 @@ function context(subject: string | null) {
       insert: mock(async () => "new-run"),
       patch: mock(async () => {}),
     },
-    storage: { generateUploadUrl: mock(async () => "https://upload.example") },
+    storage: {
+      generateUploadUrl: mock(async () => "https://upload.example"),
+      getUrl: mock(async () => "https://storage.example/file"),
+    },
   };
 }
 
@@ -54,6 +59,7 @@ describe("run and artifact ownership", () => {
         await expect(invoke(operation, ctx, args)).rejects.toThrow();
         for (const call of Object.values(ctx.db)) expect(call).not.toHaveBeenCalled();
         expect(ctx.storage.generateUploadUrl).not.toHaveBeenCalled();
+        expect(ctx.storage.getUrl).not.toHaveBeenCalled();
       });
     }
     test(`${name} permits the authenticated owner`, async () => {
@@ -63,6 +69,7 @@ describe("run and artifact ownership", () => {
 
   test("a signed-in user cannot read another user's run using their own ID", async () => {
     expect(await invoke(runs.get, context("attacker"), { id: "run", userId: "attacker" })).toBeNull();
+    expect(await invoke(runs.getPage, context("attacker"), { id: "run", userId: "attacker" })).toBeNull();
     await expect(invoke(artifacts.getForRun, context("attacker"), { runId: "run", userId: "attacker" })).rejects.toThrow("Run not found");
   });
 
@@ -140,4 +147,98 @@ test("summarizeForUser counts live owned runs and ignores deleted rows", async (
     if (previous === undefined) delete process.env.WORKOS_CLIENT_ID;
     else process.env.WORKOS_CLIENT_ID = previous;
   }
+});
+
+test("listRecentPreviews joins markdown and the first tile without loading every artifact", async () => {
+  const ctx = context("owner");
+  const live = [
+    { _id: "done", userId: "owner", domain: "done.example", status: "completed", mode: "visual" },
+    { _id: "queued", userId: "owner", domain: "queued.example", status: "queued" },
+    { _id: "gone", userId: "owner", domain: "gone.example", status: "completed", deletedAt: 1 },
+    { _id: "empty", userId: "owner", domain: "empty.example", status: "completed", mode: "visual" },
+  ];
+  ctx.db.query = mock((table: string) => {
+    if (table === "designRuns") {
+      return {
+        withIndex: () => ({
+          order: () => ({
+            take: async () => live,
+          }),
+        }),
+      };
+    }
+    return {
+      withIndex: (
+        _name: string,
+        fn: (q: { eq: (field: string, value: unknown) => unknown }) => void,
+      ) => {
+        const fields: Record<string, unknown> = {};
+        const q = {
+          eq(field: string, value: unknown) {
+            fields[field] = value;
+            return q;
+          },
+        };
+        fn(q);
+        return {
+          unique: async () => {
+            if (fields.kind === "markdown" && fields.runId === "done") {
+              return {
+                text: "# Done Design System\n\n## 1. Visual Theme & Atmosphere\n\nWarm.\n",
+              };
+            }
+            if (fields.kind === "visual" && fields.runId === "done") {
+              return {
+                value: {
+                  tiles: [{ storageId: "tile-1", file: "1.png", width: 10, height: 10 }],
+                },
+              };
+            }
+            return null;
+          },
+        };
+      },
+    };
+  });
+
+  expect(
+    await invoke(runs.listRecentPreviews, ctx, {
+      userId: "owner",
+      limit: 12,
+      requireDesignFile: true,
+      displayLimit: 6,
+    }),
+  ).toEqual([
+    {
+      slug: "done",
+      domain: "done.example",
+      status: "completed",
+      title: "Done",
+      theme: "Warm.",
+      accent: "#888888",
+      image: "https://storage.example/file",
+      textOnly: false,
+    },
+  ]);
+  expect(ctx.db.get).not.toHaveBeenCalled();
+});
+
+test("getPage loads artifacts and tiles together and returns null for a missing run", async () => {
+  const missing = context("owner");
+  missing.db.get = mock(async () => null);
+  expect(await invoke(runs.getPage, missing, { id: "run", userId: "owner" })).toBeNull();
+
+  const ctx = context("owner");
+  expect(await invoke(runs.getPage, ctx, { id: "run", userId: "owner" })).toEqual({
+    run: expect.objectContaining({ _id: "run" }),
+    artifacts: {
+      crawl: null,
+      visual: null,
+      description: null,
+      tokens: null,
+      doc: null,
+      markdown: null,
+    },
+    tiles: [],
+  });
 });

@@ -28,9 +28,18 @@ const query = mock(async (_reference: unknown, args: Record<string, unknown>) =>
   const name = getFunctionName(_reference as Parameters<typeof getFunctionName>[0]);
   if (name === "cachedSites:list") return listCachedSites();
   if (name === "designRuns:summarizeForUser") return summarize(recent);
-  if (name === "designRunArtifacts:getTileUrls") return [{ url: "https://example.com/captured.png" }];
-  if ("runId" in args) return artifacts[String(args.runId)] ?? {};
-  return recent.slice(0, Number(args.limit));
+  if (name === "userCredentials:listForUser") return [];
+  if (name === "designRuns:listRecentPreviews") {
+    const requireDesignFile = Boolean(args.requireDesignFile);
+    const displayLimit =
+      typeof args.displayLimit === "number" ? args.displayLimit : undefined;
+    return recent
+      .slice(0, Number(args.limit))
+      .map((run) => previewFromRun(run, requireDesignFile))
+      .filter((run): run is NonNullable<typeof run> => Boolean(run))
+      .slice(0, displayLimit);
+  }
+  throw new Error(`Unexpected query ${name}`);
 });
 
 mock.module("@workos-inc/authkit-nextjs", () => ({
@@ -56,6 +65,55 @@ beforeEach(() => {
 function completedRun(id: string): RunFixture {
   artifacts[id] = { markdown: `# ${id} Design System\n\nAccent: \`#abcdef\`` };
   return { _id: id, domain: `${id}.example`, status: "completed" };
+}
+
+function previewFromRun(run: RunFixture, requireDesignFile: boolean) {
+  if (run.status !== "completed") {
+    return requireDesignFile
+      ? null
+      : {
+          slug: run._id,
+          domain: run.domain,
+          status: run.status,
+          title: run.domain,
+          theme: "",
+          accent: "#888888",
+          image: null,
+          textOnly: false,
+        };
+  }
+  const markdown = artifacts[run._id]?.markdown;
+  if (!markdown) {
+    return requireDesignFile
+      ? null
+      : {
+          slug: run._id,
+          domain: run.domain,
+          status: run.status,
+          title: run.domain,
+          theme: "",
+          accent: "#888888",
+          image: null,
+          textOnly: false,
+        };
+  }
+  return {
+    slug: run._id,
+    domain: run.domain,
+    status: run.status,
+    title: idTitle(markdown, run.domain),
+    theme: "",
+    accent: "#abcdef",
+    image: "https://example.com/captured.png",
+    textOnly: false,
+  };
+}
+
+function idTitle(markdown: string, fallback: string) {
+  const match = markdown.match(/^# (.+)/m);
+  return match
+    ? match[1].replace(/\s*Design System\s*$/i, "").trim()
+    : fallback;
 }
 
 function queryNames() {
@@ -132,19 +190,20 @@ describe("Overview recent-run summary", () => {
     }
     expect(html).toContain("Extract");
     expect(html).not.toContain("Turn a website into a design system");
-    expect(queryNames()).toContain("designRuns:listRecent");
+    expect(queryNames()).toContain("designRuns:listRecentPreviews");
     expect(queryNames()).toContain("designRuns:summarizeForUser");
     expect(queryNames()).toContain("cachedSites:list");
+    expect(queryNames()).toContain("userCredentials:listForUser");
+    expect(queryNames()).not.toContain("designRuns:listRecent");
+    expect(queryNames()).not.toContain("designRunArtifacts:getForRun");
     expect(
       query.mock.calls.map(([, args]) => args),
-    ).toContainEqual({ userId: "overview-test-user", limit: 12 });
-    expect(
-      query.mock.calls.filter(
-        ([reference]) =>
-          getFunctionName(reference as Parameters<typeof getFunctionName>[0]) ===
-          "designRunArtifacts:getForRun",
-      ),
-    ).toHaveLength(2);
+    ).toContainEqual({
+      userId: "overview-test-user",
+      limit: 12,
+      requireDesignFile: true,
+      displayLimit: 6,
+    });
   });
 
   test("keeps the recent list to six completed runs", async () => {

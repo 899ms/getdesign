@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import Link, { useLinkStatus } from "next/link"
 import { usePathname } from "next/navigation"
+
+import { cn } from "@/lib/utils"
 
 import { BrandMark } from "@/components/brand-mark"
 import { NavUser } from "@/components/nav-user"
@@ -31,6 +33,17 @@ import { Search01Icon } from "@hugeicons/core-free-icons"
 
 const subscribePlatform = () => () => {}
 
+function NavPendingHint() {
+  const { pending } = useLinkStatus()
+  return (
+    <i
+      aria-hidden
+      data-nav-pending={pending ? "" : undefined}
+      className="hidden"
+    />
+  )
+}
+
 function FlatNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
   const isActive =
     !item.external &&
@@ -48,14 +61,20 @@ function FlatNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
         tooltip={item.title}
         isActive={isActive}
         render={link}
-        className="gap-2.5 py-1.5"
+        className={cn(
+          "gap-2.5 py-1.5",
+          !item.external && "has-[[data-nav-pending]]:opacity-60",
+        )}
       >
         <HugeiconsIcon
           icon={item.icon}
           strokeWidth={1.75}
           className="size-[18px] shrink-0"
         />
-        <span className="text-sm">{item.title}</span>
+        <span className="text-sm">
+          {item.title}
+          {item.external ? null : <NavPendingHint />}
+        </span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   )

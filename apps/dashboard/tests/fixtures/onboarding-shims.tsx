@@ -3,7 +3,45 @@ import { getFunctionName } from "convex/server";
 import { ExtractionGuide } from "../../components/extraction-guide";
 import { hasRequiredRunCredentials } from "../../lib/credential-readiness";
 import { getCachedSite, listCachedSites } from "../../lib/cached-sites";
+import { parseDesignMd } from "@convex/lib/designMdPreview";
 import { fixture, navigate, refresh } from "./onboarding-state";
+
+function fixtureRunPreviews() {
+  if (!fixture.populated) return [];
+  const parsed = parseDesignMd(fixture.markdown);
+  return [
+    {
+      slug: "fixture-completed-run",
+      domain: "example.test",
+      status: "completed" as const,
+      title: parsed.title,
+      theme: parsed.theme,
+      accent: parsed.accent,
+      image: null,
+      textOnly: false,
+    },
+    {
+      slug: "fixture-running-run",
+      domain: "linear.app",
+      status: "running" as const,
+      title: "linear.app",
+      theme: "",
+      accent: "#888888",
+      image: null,
+      textOnly: false,
+    },
+    {
+      slug: "fixture-failed-run",
+      domain: "stripe.com",
+      status: "failed" as const,
+      title: "stripe.com",
+      theme: "",
+      accent: "#888888",
+      image: null,
+      textOnly: false,
+    },
+  ];
+}
 
 export default function Link({
   href,
@@ -49,8 +87,39 @@ export function useMutation() {
 export function useConvexAuth() {
   return { isAuthenticated: true, isLoading: false };
 }
-export function useQuery() {
-  return [];
+export function useQuery(
+  reference: Parameters<typeof getFunctionName>[0],
+  args: Record<string, unknown> | "skip" = {},
+) {
+  if (args === "skip") return undefined;
+  switch (getFunctionName(reference)) {
+    case "userCredentials:listForUser":
+      return fixture.keys;
+    case "designRuns:listRecent":
+      return fixture.populated
+        ? [
+            {
+              _id: "fixture-completed-run",
+              domain: "example.test",
+              status: "completed",
+            },
+            {
+              _id: "fixture-running-run",
+              domain: "linear.app",
+              status: "running",
+            },
+            {
+              _id: "fixture-failed-run",
+              domain: "stripe.com",
+              status: "failed",
+            },
+          ]
+        : [];
+    case "cachedSites:list":
+      return listCachedSites();
+    default:
+      return [];
+  }
 }
 export function useConvex() {
   return { query: async () => null };
@@ -82,10 +151,31 @@ export function getConvexClient() {
                 },
               ]
             : [];
+        case "designRuns:listRecentPreviews": {
+          const previews = fixtureRunPreviews();
+          if (args.requireDesignFile) {
+            return previews
+              .filter((run) => run.status === "completed")
+              .slice(0, Number(args.displayLimit ?? previews.length));
+          }
+          return previews.slice(0, Number(args.limit ?? previews.length));
+        }
         case "designRuns:summarizeForUser":
           return fixture.populated
             ? { total: 3, completed: 1, failed: 1, active: 1 }
             : { total: 0, completed: 0, failed: 0, active: 0 };
+        case "designRuns:getPage":
+          return {
+            run: {
+              _id: "fixture-completed-run",
+              domain: "example.test",
+              status: "completed",
+              url: "https://example.test",
+              mode: "visual",
+            },
+            artifacts: { markdown: fixture.markdown },
+            tiles: [],
+          };
         case "designRunArtifacts:getForRun":
           return { markdown: fixture.markdown };
         case "designRunArtifacts:getTileUrls":
