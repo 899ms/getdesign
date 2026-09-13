@@ -56,6 +56,7 @@ export default async function RunPage({
       key={slug}
       runId={slug}
       userId={user.id}
+      isPublic={run.visibility === "public"}
       initialTiles={tiles}
       totalExpected={runState.tiles}
       exportMarkdown={content}

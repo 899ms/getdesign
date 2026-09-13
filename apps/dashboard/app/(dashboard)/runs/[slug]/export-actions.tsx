@@ -30,7 +30,8 @@ export function ExportActions({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(content.replaceAll("](/cached-sites/", `](${window.location.origin}/cached-sites/`))
+      await navigator.clipboard.writeText(content.replace(/(!\[[^\]]*\]\()\/(?!\/)([^)]+)\)/g,
+        (_match, prefix: string, path: string) => `${prefix}${window.location.origin}/${path})`))
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1500)
     } catch {

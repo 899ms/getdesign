@@ -12,6 +12,7 @@ import type * as cachedSites from "../cachedSites.js";
 import type * as designRunArtifacts from "../designRunArtifacts.js";
 import type * as designRunPolicy from "../designRunPolicy.js";
 import type * as designRuns from "../designRuns.js";
+import type * as publicRuns from "../publicRuns.js";
 import type * as lib_cachedSiteFields from "../lib/cachedSiteFields.js";
 import type * as lib_cachedSiteSchema from "../lib/cachedSiteSchema.js";
 import type * as userCredentials from "../userCredentials.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   designRunArtifacts: typeof designRunArtifacts;
   designRunPolicy: typeof designRunPolicy;
   designRuns: typeof designRuns;
+  publicRuns: typeof publicRuns;
   "lib/cachedSiteFields": typeof lib_cachedSiteFields;
   "lib/cachedSiteSchema": typeof lib_cachedSiteSchema;
   userCredentials: typeof userCredentials;

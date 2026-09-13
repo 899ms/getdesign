@@ -14,6 +14,7 @@ import {
 import type { RunState } from "@/lib/runs-store";
 
 import { ExportActions } from "./export-actions";
+import { ShareRun } from "./share-run";
 import { GalleryPanel } from "./gallery-panel";
 import { RunProgress } from "./run-progress";
 import type { LightboxTile } from "./tile-lightbox";
@@ -30,6 +31,7 @@ import type { LightboxTile } from "./tile-lightbox";
 export function RunPageShell({
   runId,
   userId,
+  isPublic = false,
   initialTiles,
   totalExpected,
   exportMarkdown,
@@ -38,6 +40,7 @@ export function RunPageShell({
 }: {
   runId: string;
   userId: string;
+  isPublic?: boolean;
   initialTiles: LightboxTile[];
   totalExpected?: number;
   /** Markdown source string used by the export-actions toolbar. */
@@ -77,6 +80,8 @@ export function RunPageShell({
               </div>
             ) : null}
           </header>
+
+          {exportMarkdown ? <ShareRun runId={runId} isPublic={isPublic} /> : null}
 
           {markdownContent
             ? markdownContent

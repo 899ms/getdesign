@@ -6,7 +6,7 @@ const SUPPORT_URL = "https://github.com/MohtashamMurshid/getdesign/issues"
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: { NEXT_PUBLIC_POSTHOG_CONFIG: buildAnalyticsConfig(process.env) },
-  // Every dashboard route is private, including auth redirects and error pages.
+  // Shared runs are accessible by link; the dashboard is not a search index.
   async headers() {
     return [{
       source: "/:path*",

@@ -80,11 +80,11 @@ Implementation status and remaining beta checks. See [the V1 integration review]
 
 ## Public runs
 
-- [ ] Let an owner make a completed run public so humans and agents can share and reuse it.
+- [x] Let an owner make a completed run public so humans and agents can share and reuse it. See `docs/launch/public-runs.md`.
   - Runs stay private by default. Publishing is an explicit action on `/runs/[id]`.
   - Humans get a stable URL they can open without being the owner.
-  - Agents can fetch the published `design.md` (and screenshots if they ship with the run) from the API, CLI, SDK, or skill without the owner's provider keys.
-  - Decide URL shape, whether unauthenticated reads are allowed, which artifacts are included, and how unpublish or delete works.
+  - Agents can fetch published Markdown, JSON, and screenshots through ordinary HTTP without the owner's provider keys.
+  - `/r/[id]` allows anonymous reads of selected outputs. Unpublish or delete closes subsequent public reads, including screenshots.
   - Unpublished runs stay behind the existing owner checks. A public run must not expose other private runs or credentials.
   - This is user-owned sharing. It is not a curated Examples / `cachedSites` entry.
 

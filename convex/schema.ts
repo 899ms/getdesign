@@ -14,6 +14,8 @@ export default defineSchema({
   })
     .index("by_email", ["email"]),
   designRuns: defineTable({
+    visibility: v.optional(v.union(v.literal("private"), v.literal("public"))),
+    publishedAt: v.optional(v.number()),
     userId: v.string(),
     userEmail: v.optional(v.string()),
     url: v.string(),
