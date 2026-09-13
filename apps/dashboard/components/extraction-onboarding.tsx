@@ -6,11 +6,24 @@ import { ExtractionGuide } from "@/components/extraction-guide";
 import { hasRequiredRunCredentials } from "@/lib/credential-readiness";
 import { getConvexClient } from "@/lib/convex-server";
 
+type CredentialMeta = { provider: "daytona" | "openai" };
+
 export async function ExtractionOnboarding({
   credentialsReady,
+  keys: keysProp,
 }: {
   credentialsReady?: boolean;
+  keys?: ReadonlyArray<CredentialMeta>;
 } = {}) {
+  if (keysProp !== undefined) {
+    return (
+      <ExtractionGuide
+        credentialsReady={hasRequiredRunCredentials(keysProp)}
+        keys={keysProp}
+      />
+    );
+  }
+
   if (credentialsReady !== undefined) {
     return <ExtractionGuide credentialsReady={credentialsReady} />;
   }
@@ -23,5 +36,10 @@ export async function ExtractionOnboarding({
     {},
   );
 
-  return <ExtractionGuide credentialsReady={hasRequiredRunCredentials(keys)} />;
+  return (
+    <ExtractionGuide
+      credentialsReady={hasRequiredRunCredentials(keys)}
+      keys={keys}
+    />
+  );
 }

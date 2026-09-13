@@ -13,7 +13,6 @@ import { ExtractionOnboarding } from "@/components/extraction-onboarding"
 import { RecentRuns } from "@/components/recent-runs"
 import { loadCachedSites } from "@/lib/cached-sites"
 import { getConvexClient } from "@/lib/convex-server"
-import { hasRequiredRunCredentials } from "@/lib/credential-readiness"
 import {
   loadRecentRunPreviews,
   OVERVIEW_RUN_DISPLAY_LIMIT,
@@ -43,7 +42,6 @@ export default async function Page() {
     loadCachedSites(accessToken),
     convex.query(api.userCredentials.listForUser, {}),
   ])
-  const credentialsReady = hasRequiredRunCredentials(keys)
 
   return (
     <>
@@ -94,7 +92,7 @@ export default async function Page() {
           </div>
         </section>
 
-        {runs.length === 0 ? <ExtractionOnboarding credentialsReady={credentialsReady} /> : null}
+        {runs.length === 0 ? <ExtractionOnboarding keys={keys} /> : null}
 
         <RecentRuns runs={runs} preview />
 

@@ -108,11 +108,20 @@ describe("extraction onboarding", () => {
       const html = renderToStaticMarkup(await ExtractionOnboarding());
       expect(getConvexClient).toHaveBeenCalledWith("fixture-token");
       expect(query).toHaveBeenCalledWith(expect.anything(), {});
+      expect(html).toContain("Turn a website into a design system");
+      expect(html).toContain("Add provider keys");
+      expect(html).toContain("Choose a public URL");
+      expect(html).toContain("Open the finished design");
+      expect(html).toContain('aria-current="step"');
+      expect(html.includes("Daytona saved")).toBe(providers.includes("daytona"));
+      expect(html.includes("Daytona needed")).toBe(!providers.includes("daytona"));
+      expect(html.includes("OpenAI saved")).toBe(providers.includes("openai"));
+      expect(html.includes("OpenAI needed")).toBe(!providers.includes("openai"));
       expect(html.includes('href="/agent"')).toBe(ready);
       expect(html.includes("Extract a design system")).toBe(ready);
       expect(html.includes('href="/account#provider-keys"')).toBe(!ready);
-      expect(html.includes('href="/sites"')).toBe(!ready);
-      expect(html.includes("Open an example")).toBe(!ready);
+      expect(html).toContain('href="/sites"');
+      expect(html).toContain("Open an example");
       expect(html).not.toContain("fixture-token");
       expect(html).not.toContain("demo");
 
@@ -142,24 +151,44 @@ describe("extraction onboarding", () => {
     });
   }
 
+  test("Overview can pass saved keys without a second credentials query", async () => {
+    storedKeys = [key("daytona")];
+    const html = renderToStaticMarkup(
+      await ExtractionOnboarding({ keys: storedKeys }),
+    );
+    expect(getConvexClient).not.toHaveBeenCalled();
+    expect(html).toContain("Daytona saved");
+    expect(html).toContain("OpenAI needed");
+    expect(html).toContain('href="/account#provider-keys"');
+    expect(html).not.toContain('href="/agent"');
+  });
+
   test("Overview shows onboarding only without completed runs and hides the empty recent-run list", () => {
     const page = readFileSync(
       new URL("../app/(dashboard)/page.tsx", import.meta.url),
       "utf8",
     );
     expect(page).toContain(
-      "{runs.length === 0 ? <ExtractionOnboarding credentialsReady={credentialsReady} /> : null}",
+      "{runs.length === 0 ? <ExtractionOnboarding keys={keys} /> : null}",
     );
     expect(page).toContain("<RecentRuns");
     expect(page).toContain('href="/runs"');
     expect(page).toContain("<CachedSites");
     expect(page).not.toContain("EmptyDesignRuns");
-    expect(
-      renderToStaticMarkup(<ExtractionGuide credentialsReady={false} />),
-    ).toContain("Open an example");
-    expect(
-      renderToStaticMarkup(<ExtractionGuide credentialsReady />),
-    ).toContain('href="/agent"');
+    const setup = renderToStaticMarkup(
+      <ExtractionGuide credentialsReady={false} />,
+    );
+    expect(setup).toContain("Open an example");
+    expect(setup).toContain("Daytona needed");
+    expect(setup).toContain("OpenAI needed");
+    expect(setup).not.toContain('href="/agent"');
+    const ready = renderToStaticMarkup(<ExtractionGuide credentialsReady />);
+    expect(ready).toContain('href="/agent"');
+    expect(ready).toContain("Extract a design system");
+    expect(ready).toContain("Daytona saved");
+    expect(ready).toContain("OpenAI saved");
+    expect(ready).toContain("Open an example");
+    expect(ready).not.toContain('href="/account#provider-keys"');
   });
 
   test("the Agent allows URL lookup without keys and explains new extraction requirements", () => {
