@@ -37,7 +37,7 @@ export default function HeroCard() {
         <TabButton active={tab === "ts"} onClick={() => setTab("ts")}>
           getdesign.ts
         </TabButton>
-        <span className="ml-auto pr-2 font-mono text-[10.5px] text-[var(--subtle)]">
+        <span className="ml-auto min-w-0 truncate pr-2 font-mono text-[10.5px] text-[var(--subtle)]">
           cursor.com
         </span>
       </div>

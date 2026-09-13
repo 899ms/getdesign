@@ -49,7 +49,10 @@ describe("deployment indexing policy", () => {
       expect(await dashboardConfig.headers()).toEqual([{
         source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       }]);
-      expect(dashboardRobots()).toEqual({ rules: { userAgent: "*", disallow: "/" } });
+      expect(dashboardRobots()).toEqual({ rules: indexable
+        ? { userAgent: "*", allow: "/" }
+        : { userAgent: "*", disallow: "/" }
+      });
     });
   }
 
@@ -58,6 +61,7 @@ describe("deployment indexing policy", () => {
     process.env.VERCEL_TARGET_ENV = "staging";
     expect(webProduction()).toBe(false);
     expect(docsProduction()).toBe(false);
+    expect(dashboardRobots()).toEqual({ rules: { userAgent: "*", disallow: "/" } });
   });
 });
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { redirect } from "next/navigation";
@@ -8,6 +9,8 @@ import { loadCachedSites, pickRandomItems } from "@/lib/cached-sites";
 
 import { AgentCommand } from "./agent-command";
 import { AgentRecentRunsLoader } from "./agent-recent-runs";
+
+export const metadata: Metadata = { title: "Agent" };
 
 export default async function AgentPage({ searchParams }: {
   searchParams: Promise<{ refresh?: string }>;

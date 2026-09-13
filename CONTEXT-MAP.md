@@ -16,8 +16,6 @@ Before changing code in a workspace, read that workspace’s `**CONTEXT.md*`*. E
 | **api**         | `[apps/api/CONTEXT.md](apps/api/CONTEXT.md)`                 | HTTP API — Bun + Hono; Vercel Node function      |
 | **deck**        | `[apps/deck/CONTEXT.md](apps/deck/CONTEXT.md)`               | Launch deck — slides; PDF + editable PPTX export |
 | **docs**        | `[apps/docs/CONTEXT.md](apps/docs/CONTEXT.md)`               | Documentation site — Astro / Starlight           |
-| **studio**      | `[apps/studio/CONTEXT.md](apps/studio/CONTEXT.md)`           | Studio — Electron desktop app                    |
-| **studio-site** | `[apps/studio-site/CONTEXT.md](apps/studio-site/CONTEXT.md)` | Studio marketing / web — Next.js                 |
 | **video**       | `[apps/video/CONTEXT.md](apps/video/CONTEXT.md)`             | Video app / asset pipeline                       |
 | **web**         | `[apps/web/CONTEXT.md](apps/web/CONTEXT.md)`                 | Main product web — Next.js + Convex              |
 | **dashboard**   | `[apps/dashboard/CONTEXT.md](apps/dashboard/CONTEXT.md)`     | Authenticated product dashboard — Next.js + WorkOS |

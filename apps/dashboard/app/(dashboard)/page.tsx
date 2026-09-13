@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link"
 import { withAuth } from "@workos-inc/authkit-nextjs"
 import { redirect } from "next/navigation"
@@ -21,6 +22,8 @@ import {
 import { api } from "@convex/_generated/api"
 
 const EXAMPLE_PREVIEW_COUNT = 4
+
+export const metadata: Metadata = { title: "Overview" };
 
 export default async function Page() {
   const { user, accessToken } = await withAuth()

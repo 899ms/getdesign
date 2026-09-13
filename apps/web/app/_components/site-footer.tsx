@@ -57,6 +57,9 @@ export function SiteFooter({ variant = "marketing" }: SiteFooterProps) {
             <a href="/design" className="hover:text-foreground">
               Design
             </a>
+            <a href="/#faq" className="hover:text-foreground">
+              FAQ
+            </a>
             <a
               href={SITE_GITHUB_URL}
               target="_blank"

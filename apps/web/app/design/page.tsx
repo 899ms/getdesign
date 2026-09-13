@@ -15,12 +15,12 @@ import { TypographySection } from "./_components/typography-section";
 import { VoiceSection } from "./_components/voice-section";
 
 export const metadata: Metadata = {
-  title: "Design",
+  title: "Brand guidelines and design tokens",
   description:
     "The living design.md behind getdesign. Logo, palette, typography, spacing, components, motion, and voice, rendered as the real product.",
   alternates: { canonical: "/design" },
   openGraph: {
-    title: "Design · getdesign",
+    title: "Brand guidelines and design tokens · getdesign",
     description:
       "The living design.md behind getdesign. Tokens, components, motion, and voice.",
     url: "/design",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Design · getdesign",
+    title: "Brand guidelines and design tokens · getdesign",
     images: [SITE_SOCIAL_IMAGE],
     description:
       "The living design.md behind getdesign. Tokens, components, motion, and voice.",

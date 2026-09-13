@@ -2,58 +2,17 @@ import { HomePage } from "./_components/home/home-page";
 import { JsonLd } from "./_components/json-ld";
 import { MarketingShell } from "./_components/marketing-shell";
 import { SiteFooter } from "./_components/site-footer";
-import {
-  SITE_AUTH_DESCRIPTION,
-  SITE_DOMAIN,
-  SITE_NAME,
-  SITE_RUN_COST_DESCRIPTION,
-} from "./_lib/site";
+import { SITE_DOMAIN } from "./_lib/site";
+import { HOME_FAQ } from "./_lib/faq";
 
 const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: `What is ${SITE_NAME}?`,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `${SITE_NAME} is a developer tool that turns any public URL into a production-grade design system. An agent opens the site in a real browser, extracts palette, typography, and components from the actual computed CSS, and returns a design.md file.`,
-      },
-    },
-    {
-      "@type": "Question",
-      name: `How does ${SITE_NAME} work?`,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "A headless browser renders the target URL, the agent walks the DOM and reads computed styles, clusters tokens to find real design decisions, identifies components, and writes the result to Markdown.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: `What surfaces does ${SITE_NAME} provide?`,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "The dashboard and HTTP API run the hosted agent. The CLI and TypeScript SDK run it in-process on Bun. The portable Skill uses your coding agent's own tools.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Does it scrape HTML?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "No. It renders the site in a real browser and reads computed CSS, so the extracted tokens reflect what users actually see.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Is there authentication or a paid tier?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `${SITE_AUTH_DESCRIPTION} ${SITE_RUN_COST_DESCRIPTION}`,
-      },
-    },
-  ],
+  mainEntity: HOME_FAQ.map(({ question, answer }) => ({
+    "@type": "Question",
+    name: question,
+    acceptedAnswer: { "@type": "Answer", text: answer },
+  })),
 };
 
 const breadcrumbJsonLd = {

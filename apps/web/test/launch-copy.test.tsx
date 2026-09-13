@@ -112,9 +112,32 @@ describe("V1 launch copy and links", () => {
     const data = blocks.flatMap((match) => JSON.parse(match[1]));
     const faq = data.find((entry) => entry["@type"] === "FAQPage");
     const answer = faq.mainEntity.find((entry: { name: string }) => entry.name.includes("authentication")).acceptedAnswer.text;
-    expect(answer).toContain("WorkOS access token");
+    expect(answer).toContain("WorkOS sign-in");
     expect(answer).toContain("no getdesign run billing");
     expect(answer).toContain("Daytona for browser capture and OpenAI for model usage");
+  });
+
+  test("every FAQ schema answer is available in the visible page", async () => {
+    const html = renderToStaticMarkup(<Home />);
+    const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+    const faq = blocks.flatMap((match) => JSON.parse(match[1])).find((entry) => entry["@type"] === "FAQPage");
+    const questions: string[] = [];
+    const answers: string[] = [];
+    let question = "";
+    let answer = "";
+    await new HTMLRewriter()
+      .on("details summary", {
+        element() { question = ""; },
+        text(chunk) { question += chunk.text; if (chunk.lastInTextNode) questions.push(question); },
+      })
+      .on("details p", {
+        element() { answer = ""; },
+        text(chunk) { answer += chunk.text; if (chunk.lastInTextNode) answers.push(answer); },
+      })
+      .transform(new Response(html)).text();
+    expect(questions).toEqual(faq.mainEntity.map((entry: { name: string }) => Bun.escapeHTML(entry.name)));
+    expect(answers).toEqual(faq.mainEntity.map((entry: { acceptedAnswer: { text: string } }) => Bun.escapeHTML(entry.acceptedAnswer.text)));
+    expect(html).toContain('href="/#faq"');
   });
 
   test("linked onboarding docs do not reintroduce obsolete launch claims", () => {

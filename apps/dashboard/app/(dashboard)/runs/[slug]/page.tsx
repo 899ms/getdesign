@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { withDesignImages } from "@getdesign/tools/render"
 import { notFound, redirect } from "next/navigation"
 import { withAuth } from "@workos-inc/authkit-nextjs"
@@ -8,6 +9,8 @@ import { toRunState } from "@/lib/runs-store"
 import { api } from "@convex/_generated/api"
 import type { Id } from "@convex/_generated/dataModel"
 import { RunPageShell } from "./run-page-shell"
+
+export const metadata: Metadata = { title: "Design run" };
 
 export default async function RunPage({
   params,

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { withAuth } from "@workos-inc/authkit-nextjs"
 import { redirect } from "next/navigation"
 
@@ -9,6 +10,8 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
+
+export const metadata: Metadata = { title: "Examples" };
 
 export default async function SitesPage() {
   const { user, accessToken } = await withAuth()
