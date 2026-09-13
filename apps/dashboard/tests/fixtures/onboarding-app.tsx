@@ -63,7 +63,11 @@ function App() {
   useEffect(() => {
     void Overview().then(setOverview);
     void Sites().then(setSites);
-    void Runs().then(setRunsPage);
+    void Runs({
+      searchParams: Promise.resolve({
+        visibility: new URLSearchParams(window.location.search).get("visibility") ?? undefined,
+      }),
+    }).then(setRunsPage);
     const refresh = new URLSearchParams(window.location.search).get("refresh") ?? undefined;
     void Agent({ searchParams: Promise.resolve({ refresh }) }).then(setAgent);
     const siteSlug = window.location.pathname.match(/^\/sites\/([^/]+)$/)?.[1];

@@ -8,6 +8,7 @@ type RunFixture = {
   _id: string;
   domain: string;
   status: "queued" | "running" | "completed" | "failed";
+  visibility?: "public" | "private";
 };
 
 let recent: RunFixture[] = [];
@@ -80,6 +81,7 @@ function previewFromRun(run: RunFixture, requireDesignFile: boolean) {
           accent: "#888888",
           image: null,
           textOnly: false,
+          visibility: run.visibility === "public" ? "public" : "private",
         };
   }
   const markdown = artifacts[run._id]?.markdown;
@@ -95,6 +97,7 @@ function previewFromRun(run: RunFixture, requireDesignFile: boolean) {
           accent: "#888888",
           image: null,
           textOnly: false,
+          visibility: run.visibility === "public" ? "public" : "private",
         };
   }
   return {
@@ -106,6 +109,7 @@ function previewFromRun(run: RunFixture, requireDesignFile: boolean) {
     accent: "#abcdef",
     image: "https://example.com/captured.png",
     textOnly: false,
+    visibility: run.visibility === "public" ? "public" : "private",
   };
 }
 
@@ -147,6 +151,9 @@ describe("Overview recent-run summary", () => {
     const html = renderToStaticMarkup(await Page());
 
     expect(html).toContain("Turn a website into a design system");
+    expect(html).toContain("Add provider keys");
+    expect(html).toContain("Choose a public URL");
+    expect(html).toContain("Open the finished design");
     expect(html).toContain('href="/account#provider-keys"');
     expect(html).toContain('href="/sites"');
     expect(html).not.toContain("Recent runs");
@@ -253,16 +260,20 @@ test("Overview examples preview links to the full catalog", async () => {
 test("Runs lists every recent status without mixing in cached sites", async () => {
   const { default: RunsPage } = await import("../app/(dashboard)/runs/page");
   recent = [
-    completedRun("visible"),
+    { ...completedRun("visible"), visibility: "public" },
     { _id: "queued", domain: "queued.example", status: "queued" },
     { _id: "failed", domain: "failed.example", status: "failed" },
   ];
-  const html = renderToStaticMarkup(await RunsPage());
+  const html = renderToStaticMarkup(await RunsPage({ searchParams: Promise.resolve({}) }));
   expect(html).toContain("Recent runs");
   expect(html).toContain("3 available");
+  expect(html).toContain('href="/runs?visibility=public"');
+  expect(html).toContain('href="/runs?visibility=private"');
   expect(html).toContain('href="/runs/visible"');
   expect(html).toContain('href="/runs/queued"');
   expect(html).toContain('href="/runs/failed"');
+  expect(html).toContain("Public");
+  expect(html).toContain("Private");
   expect(html).toContain("Queued");
   expect(html).toContain("Failed");
   expect(html).toContain("Extract");
@@ -273,9 +284,33 @@ test("Runs lists every recent status without mixing in cached sites", async () =
   ).toContainEqual({ userId: "overview-test-user", limit: 48 });
 });
 
+test("Runs can show only public or private extractions", async () => {
+  const { default: RunsPage } = await import("../app/(dashboard)/runs/page");
+  recent = [
+    { ...completedRun("visible"), visibility: "public" },
+    { _id: "queued", domain: "queued.example", status: "queued" },
+    { _id: "failed", domain: "failed.example", status: "failed" },
+  ];
+  const publicHtml = renderToStaticMarkup(
+    await RunsPage({ searchParams: Promise.resolve({ visibility: "public" }) }),
+  );
+  expect(publicHtml).toContain('href="/runs/visible"');
+  expect(publicHtml).not.toContain('href="/runs/queued"');
+  expect(publicHtml).not.toContain('href="/runs/failed"');
+  expect(publicHtml).toContain("1 public");
+  expect(publicHtml).toContain('aria-current="page"');
+
+  const privateHtml = renderToStaticMarkup(
+    await RunsPage({ searchParams: Promise.resolve({ visibility: "private" }) }),
+  );
+  expect(privateHtml).not.toContain('href="/runs/visible"');
+  expect(privateHtml).toContain('href="/runs/queued"');
+  expect(privateHtml).toContain("2 private");
+});
+
 test("Runs shows an empty state when the user has no extractions", async () => {
   const { default: RunsPage } = await import("../app/(dashboard)/runs/page");
-  const html = renderToStaticMarkup(await RunsPage());
+  const html = renderToStaticMarkup(await RunsPage({ searchParams: Promise.resolve({}) }));
   expect(html).toContain("No runs yet");
   expect(html).toContain("Start an extraction from Agent.");
   expect(html).toContain('href="/agent"');
@@ -297,6 +332,7 @@ test("Overview recent-run preview links to the Runs page", async () => {
           accent: "#abcdef",
           image: null,
           textOnly: false,
+          visibility: "private",
         },
       ]}
     />,
@@ -304,5 +340,6 @@ test("Overview recent-run preview links to the Runs page", async () => {
   expect(html).toContain("Browse all runs");
   expect(html).toContain('href="/runs"');
   expect(html).toContain('href="/runs/visible"');
+  expect(html).toContain("Private");
   expect(html).not.toContain("available");
 });

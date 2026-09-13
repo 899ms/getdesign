@@ -171,6 +171,7 @@ const runPreviewValidator = v.object({
   accent: v.string(),
   image: v.union(v.string(), v.null()),
   textOnly: v.boolean(),
+  visibility: v.union(v.literal("private"), v.literal("public")),
 });
 
 const MAX_RECENT_PREVIEW_LIMIT = 48;

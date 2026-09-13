@@ -33,7 +33,7 @@ describe("dashboard loading skeletons", () => {
     const runs = renderToStaticMarkup(<RunsLoading />);
     expect(runs).toContain("Runs");
     expect(runs).toContain("Recent runs");
-    expect(runs).toContain("Private extractions from your account.");
+    expect(runs).toContain("Extractions from your account.");
     expect(runs).toContain('href="/agent"');
     expect(runs).toContain("Extract");
 

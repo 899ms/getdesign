@@ -24,7 +24,22 @@ export type DesignRunPreview = {
   accent: string;
   image: string | null;
   textOnly: boolean;
+  visibility: "public" | "private";
 };
+
+export type RunVisibilityFilter = "all" | DesignRunPreview["visibility"];
+
+export function parseRunVisibilityFilter(value?: string): RunVisibilityFilter {
+  return value === "public" || value === "private" ? value : "all";
+}
+
+export function filterRunPreviews<T extends { visibility: DesignRunPreview["visibility"] }>(
+  runs: T[],
+  filter: RunVisibilityFilter,
+) {
+  if (filter === "all") return runs;
+  return runs.filter((run) => run.visibility === filter);
+}
 
 export function artifactSiteName(value: unknown): string | undefined {
   if (!value || typeof value !== "object" || !("siteName" in value)) return undefined;

@@ -11,6 +11,7 @@ export type RunPreview = {
   accent: string;
   image: string | null;
   textOnly: boolean;
+  visibility: "public" | "private";
 };
 
 export type TileUrl = {
@@ -87,6 +88,10 @@ export async function loadTileUrlsForRun(
   return withUrls.filter((tile): tile is TileUrl => tile !== null);
 }
 
+function visibilityOf(run: Doc<"designRuns">): "public" | "private" {
+  return run.visibility === "public" ? "public" : "private";
+}
+
 function fallbackPreview(run: Doc<"designRuns">): RunPreview {
   return {
     slug: String(run._id),
@@ -97,6 +102,7 @@ function fallbackPreview(run: Doc<"designRuns">): RunPreview {
     accent: "#888888",
     image: null,
     textOnly: run.mode === "text_only",
+    visibility: visibilityOf(run),
   };
 }
 
@@ -155,6 +161,7 @@ async function previewForRun(
     status: run.status,
     image,
     textOnly: run.mode === "text_only",
+    visibility: visibilityOf(run),
     ...parseDesignMd(markdown),
   };
 }

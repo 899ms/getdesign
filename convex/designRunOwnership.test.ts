@@ -152,7 +152,7 @@ test("summarizeForUser counts live owned runs and ignores deleted rows", async (
 test("listRecentPreviews joins markdown and the first tile without loading every artifact", async () => {
   const ctx = context("owner");
   const live = [
-    { _id: "done", userId: "owner", domain: "done.example", status: "completed", mode: "visual" },
+    { _id: "done", userId: "owner", domain: "done.example", status: "completed", mode: "visual", visibility: "public" },
     { _id: "queued", userId: "owner", domain: "queued.example", status: "queued" },
     { _id: "gone", userId: "owner", domain: "gone.example", status: "completed", deletedAt: 1 },
     { _id: "empty", userId: "owner", domain: "empty.example", status: "completed", mode: "visual" },
@@ -218,6 +218,7 @@ test("listRecentPreviews joins markdown and the first tile without loading every
       accent: "#888888",
       image: "https://storage.example/file",
       textOnly: false,
+      visibility: "public",
     },
   ]);
   expect(ctx.db.get).not.toHaveBeenCalled();

@@ -93,6 +93,7 @@ function RunRowSkeleton() {
         <Skeleton className="h-4 w-40 max-w-full" />
         <Skeleton className="h-3 w-24" />
       </div>
+      <Skeleton className="h-3 w-12" />
       <Skeleton className="hidden h-3 w-16 sm:block" />
     </div>
   );
@@ -197,7 +198,7 @@ export function RunsLoading() {
             <div className="min-w-0">
               <h2 className="text-sm font-medium">Recent runs</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Private extractions from your account.
+                Extractions from your account.
               </p>
             </div>
           </div>

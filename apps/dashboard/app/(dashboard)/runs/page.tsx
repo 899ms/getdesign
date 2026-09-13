@@ -11,18 +11,26 @@ import { buttonVariants } from "@/components/ui/button";
 import { RecentRuns } from "@/components/recent-runs";
 import { getConvexClient } from "@/lib/convex-server";
 import {
+  filterRunPreviews,
   loadRecentRunPreviews,
+  parseRunVisibilityFilter,
   RUNS_PAGE_QUERY_LIMIT,
 } from "@/lib/design-run-preview";
 
-export default async function RunsPage() {
+export default async function RunsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ visibility?: string }>;
+}) {
   const { user, accessToken } = await withAuth();
 
   if (!user || !accessToken) {
     redirect("/sign-in");
   }
 
+  const { visibility } = await searchParams;
   const convex = getConvexClient(accessToken);
+  const filter = parseRunVisibilityFilter(visibility);
   const runs = await loadRecentRunPreviews(convex, user.id, {
     queryLimit: RUNS_PAGE_QUERY_LIMIT,
   });
@@ -56,7 +64,10 @@ export default async function RunsPage() {
             </p>
           </div>
         ) : (
-          <RecentRuns runs={runs} />
+          <RecentRuns
+            runs={filterRunPreviews(runs, filter)}
+            visibilityFilter={filter}
+          />
         )}
       </div>
     </>

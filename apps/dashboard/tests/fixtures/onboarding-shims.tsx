@@ -19,6 +19,7 @@ function fixtureRunPreviews() {
       accent: parsed.accent,
       image: null,
       textOnly: false,
+      visibility: "public" as const,
     },
     {
       slug: "fixture-running-run",
@@ -29,6 +30,7 @@ function fixtureRunPreviews() {
       accent: "#888888",
       image: null,
       textOnly: false,
+      visibility: "private" as const,
     },
     {
       slug: "fixture-failed-run",
@@ -39,6 +41,7 @@ function fixtureRunPreviews() {
       accent: "#888888",
       image: null,
       textOnly: false,
+      visibility: "private" as const,
     },
   ];
 }
@@ -78,6 +81,7 @@ export function ExtractionOnboarding() {
   return (
     <ExtractionGuide
       credentialsReady={hasRequiredRunCredentials(fixture.keys)}
+      keys={fixture.keys}
     />
   );
 }
