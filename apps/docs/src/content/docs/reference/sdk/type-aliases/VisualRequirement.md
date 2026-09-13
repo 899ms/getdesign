@@ -7,4 +7,4 @@ title: "VisualRequirement"
 
 > **VisualRequirement** = `"require"` \| `"text_only_fallback"`
 
-Defined in: [packages/sdk/src/index.ts:18](https://github.com/MohtashamMurshid/getdesign/blob/312cdf4db46bb11b2f4a123a8fe28c18e508ff50/packages/sdk/src/index.ts#L18)
+Defined in: [packages/sdk/src/index.ts:21](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L21)

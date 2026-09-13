@@ -10,6 +10,7 @@ const sites = snapshots.map(snapshot => cachedSiteSchema.parse(snapshot));
 export function listCachedSites(): CachedSiteSummary[] {
   return sites.map(site => ({
     slug: site.slug, title: site.title, url: site.url, capturedAt: site.capturedAt,
+    images: site.images,
     summary: site.summary, colors: site.colors, mode: site.mode, tiles: site.tiles,
   }));
 }

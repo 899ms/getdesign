@@ -13,7 +13,7 @@ afterAll(() => {
   URL.revokeObjectURL = originalRevoke;
 });
 
-test("download captures once after dispatch and never sends content or filename", () => {
+test("download captures once after dispatch and never sends content or filename", async () => {
   const click = mock(() => {
     expect(capture).not.toHaveBeenCalled();
   });
@@ -24,7 +24,7 @@ test("download captures once after dispatch and never sends content or filename"
   } as unknown as Document;
   URL.createObjectURL = () => "blob:private-content";
   URL.revokeObjectURL = mock();
-  downloadDesignMd("# SECRET generated content", "private-site-design.md");
+  await downloadDesignMd("# SECRET generated content", "private-site-design.md");
   expect(click).toHaveBeenCalledTimes(1);
   expect(capture.mock.calls).toEqual([
     [{ event: "design_md_downloaded", properties: {} }],
@@ -33,7 +33,7 @@ test("download captures once after dispatch and never sends content or filename"
   expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:private-content");
 });
 
-test("failed download dispatch emits nothing and still cleans up", () => {
+test("failed download dispatch emits nothing and still cleans up", async () => {
   capture.mockClear();
   const remove = mock();
   globalThis.document = {
@@ -44,7 +44,7 @@ test("failed download dispatch emits nothing and still cleans up", () => {
     }),
     body: { appendChild() {}, removeChild: remove },
   } as unknown as Document;
-  expect(() => downloadDesignMd("# SECRET", "private.md")).toThrow(
+  await expect(downloadDesignMd("# SECRET", "private.md")).rejects.toThrow(
     "download blocked",
   );
   expect(capture).not.toHaveBeenCalled();

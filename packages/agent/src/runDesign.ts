@@ -1,4 +1,4 @@
-import { renderDesignMd } from "@getdesign/tools/render";
+import { renderDesignMd, withDesignImages } from "@getdesign/tools/render";
 
 import type { CrawlSiteResult } from "@getdesign/tools";
 import type {
@@ -7,6 +7,7 @@ import type {
 } from "@getdesign/tools/daytona";
 import type { DesignDoc, DesignTokens } from "@getdesign/types";
 
+import { getDesignImages, type DesignImage } from "./images.js";
 import { runCrawl } from "./agents/crawler.js";
 import { runDescribe } from "./agents/describe.js";
 import { runExtractTokens } from "./agents/tokenExtractor.js";
@@ -47,13 +48,10 @@ export type RunDesignEvent =
  * - `"text_only_fallback"`: continue without screenshots and mark the
  *   run as `text_only`. Use only after the user has explicitly accepted
  *   the loss of visual capture.
- * - `"skip_silently"`: legacy. Continue without screenshots and without
- *   marking the run as text-only. Reserved for local development.
  */
 export type VisualRequirement =
   | "require"
-  | "text_only_fallback"
-  | "skip_silently";
+  | "text_only_fallback";
 
 export type RunDesignCredentials = {
   daytonaApiKey?: string;
@@ -75,6 +73,8 @@ export type RunDesignOptions = {
 export type RunDesignResult = {
   url: string;
   markdown: string;
+  /** Captured files referenced by markdown; empty only in explicit text-only mode. */
+  images: DesignImage[];
   doc: DesignDoc;
   tokens: DesignTokens;
   crawl: CrawlSiteResult;
@@ -130,7 +130,7 @@ export async function runDesign(
   url: string,
   options: RunDesignOptions = {},
 ): Promise<RunDesignResult> {
-  const visualRequirement = options.visualRequirement ?? "require";
+  const visualRequirement = options.visualRequirement === "text_only_fallback" ? "text_only_fallback" : "require";
   const credentials = options.credentials;
   const model =
     options.model ?? resolveModel({ apiKey: credentials?.openaiApiKey });
@@ -164,7 +164,7 @@ export async function runDesign(
         );
   await options.onPhase?.({ phase: "visual", status: "ok", visual });
 
-  if (visual.status === "failed") {
+  if (visual.status !== "captured") {
     if (visualRequirement === "require") {
       throw new RunDesignError(visual);
     }
@@ -173,9 +173,7 @@ export async function runDesign(
   const mode: RunDesignResult["mode"] =
     visual.status === "captured"
       ? "visual"
-      : visualRequirement === "skip_silently"
-        ? "visual"
-        : "text_only";
+      : "text_only";
 
   const tileArtifacts = tilesAsArtifacts(visual);
 
@@ -221,7 +219,8 @@ export async function runDesign(
   await options.onPhase?.({ phase: "synthesize", status: "ok", doc });
 
   await options.onPhase?.({ phase: "render", status: "start" });
-  const baseMarkdown = renderDesignMd(doc);
+  const images = await getDesignImages(visual);
+  const baseMarkdown = withDesignImages(renderDesignMd(doc), images.map(image => ({ url: image.path, alt: image.alt })));
   const markdown =
     mode === "text_only" ? prependTextOnlyBanner(baseMarkdown) : baseMarkdown;
   await options.onPhase?.({ phase: "render", status: "ok", markdown });
@@ -229,6 +228,7 @@ export async function runDesign(
   return {
     url: crawl.sourceUrl,
     markdown,
+    images,
     doc,
     tokens,
     crawl,

@@ -189,3 +189,11 @@ export function renderDesignMd(input: DesignDoc): string {
 
   return joinLines(lines);
 }
+
+/** Keep image evidence inside the existing nine-section document contract. */
+export function withDesignImages(markdown: string, images: { url: string; alt: string }[]): string {
+  if (!images.length) return markdown;
+  const evidence = images.map(image => `![${escapeInlineMarkdown(image.alt).replace(/[\[\]]/g, "")}](${image.url.replace(/[()\s]/g, encodeURIComponent)})`).join("\n\n");
+  const heading = markdown.indexOf("\n## ");
+  return heading < 0 ? `${markdown}\n\n${evidence}\n` : `${markdown.slice(0, heading)}\n${evidence}\n${markdown.slice(heading)}`;
+}

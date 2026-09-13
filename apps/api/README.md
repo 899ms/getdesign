@@ -106,3 +106,9 @@ apps/api/
 └── test/
     └── app.test.ts       # bun test
 ```
+
+## Images
+
+JSON and the final SSE result include `images`, an array of actual hero and full-page WebP captures with `path`, `alt`, `mimeType`, `imageBase64`, `width`, and `height`. Decode each file beside the document at its relative `path`; `markdown` links to those files. Progress events exclude image bytes.
+
+The plain Markdown response embeds screenshots as image data URLs so a single downloaded file retains its evidence. Markdown viewers that block data URLs, including GitHub, should use the JSON response and save the companion image files instead. Only an explicitly selected `x-getdesign-mode: text_only` response omits images.

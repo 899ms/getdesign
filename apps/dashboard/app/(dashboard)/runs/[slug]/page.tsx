@@ -1,3 +1,4 @@
+import { withDesignImages } from "@getdesign/tools/render"
 import { notFound, redirect } from "next/navigation"
 import { withAuth } from "@workos-inc/authkit-nextjs"
 import { DesignDocument } from "@/components/design-document"
@@ -37,10 +38,14 @@ export default async function RunPage({
     userId: user.id,
   })
 
-  const content =
+  const storedContent =
     runState.status === "completed" && typeof artifacts.markdown === "string"
       ? artifacts.markdown
       : null
+
+  const content = storedContent && runState.mode !== "text_only" && !storedContent.includes("![Captured page tile")
+    ? withDesignImages(storedContent, tiles.filter(tile => tile.url).map((tile, index) => ({ url: tile.url!, alt: `Captured page tile ${index + 1}` })))
+    : storedContent
 
   const markdownContent = content ? (
     <DesignDocument content={content} />

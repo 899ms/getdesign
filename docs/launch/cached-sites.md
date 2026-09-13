@@ -32,3 +32,11 @@ bun --env-file=apps/dashboard/.env.local scripts/cache-sites.ts
 This runs three visual extractions concurrently across 12 public sites using Daytona and OpenAI, incurring provider usage. Only completed visual results whose palettes are grounded in source CSS enter the seed catalog. A secret-value check and strict metadata schema run before writing. The script replaces the seed file atomically only after at least ten sites pass; otherwise the previous file remains intact. Intermediate snapshots and the batch report stay in ignored `getdesign-runs/cached-sites/`. Sandboxes follow the existing pipeline's cleanup lifecycle.
 
 Review the generated catalog diff and run the dashboard checks. The next production deployment upserts the new snapshots automatically. For a configured local development backend, `bun x convex dev --once` deploys the schema/functions and `bun x convex run cachedSites:seed` seeds it. Shared snapshots display their capture date and are not presented as live site data.
+
+## Image evidence
+
+Every new seed record requires a hero image and a full-page image, with dimensions and versioned paths. The recapture script writes WebP files to `apps/dashboard/public/cached-sites/<slug>/` and links them in the Markdown. The database seed includes this metadata and those references; Vercel ships the matching files with the frontend. These are curated public-site captures. Private run screenshots stay in owner-scoped Convex storage and are never copied into the public catalog.
+
+The deployment hook checks every seed image's content hash, dimensions, and document reference before starting deployment. Image paths contain content hashes; keep older files when refreshing the catalog so older shared rows can still resolve their images. Every signed-in account receives the same seeded image metadata. There are no provider calls during deployment or when opening the catalog.
+
+Overview cards show real hero screenshots. Detail pages include both captures. **Download with images** saves a ZIP with `design.md` and relative image files for offline use, including Markdown viewers that block data URLs. **Download design.md** embeds the image bytes in the one file. If an image cannot be downloaded, export reports an error instead of silently omitting it.

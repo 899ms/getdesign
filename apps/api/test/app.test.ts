@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { RunDesignError, type RunDesignResult } from "@getdesign/agent";
+import { getDesignImages, RunDesignError, type RunDesignResult } from "@getdesign/agent";
 
 import { createApp } from "../src/app";
 import type { RunDesignFn } from "../src/handlers/getDesign";
@@ -9,6 +9,7 @@ function stubResult(markdown: string): RunDesignResult {
   return {
     url: "https://example.com",
     markdown,
+    images: [],
     doc: {} as RunDesignResult["doc"],
     tokens: {} as RunDesignResult["tokens"],
     crawl: {} as RunDesignResult["crawl"],
@@ -349,4 +350,21 @@ test("GET / returns 500 JSON when runDesign throws", async () => {
   } finally {
     console.error = originalError;
   }
+});
+
+
+test("API JSON and SSE retain image files; Markdown embeds actual image bytes", async () => {
+  const png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+  const visual = { status: "captured", hero: { imageBase64: png }, fullPage: { imageBase64: png }, tiles: [] } as unknown as RunDesignResult["visual"];
+  const app = authedApp(async () => ({ ...stubResult("![Hero](images/hero.webp)"), images: await getDesignImages(visual), visual }));
+  const headers = { ...AUTH, ...BYOK };
+  const json = await (await app.fetch(request("/v1/design?url=https://example.com&format=json", headers))).json();
+  expect(json.images).toHaveLength(2);
+  expect(json.images[0].mimeType).toBe("image/webp");
+  const markdown = await (await app.fetch(request("/v1/design?url=https://example.com", headers))).text();
+  expect(markdown).toContain(`](data:image/webp;base64,${json.images[0].imageBase64})`);
+  expect(markdown).not.toContain("](images/");
+  const sse = await (await app.fetch(request("/v1/design/stream?url=https://example.com", headers))).text();
+  expect(sse).toContain('"images":[');
+  expect(sse).toContain(json.images[0].imageBase64);
 });

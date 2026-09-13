@@ -22,7 +22,8 @@ export function CachedSites({ sites }: { sites: import("@/lib/cached-site-schema
             href={`/sites/${site.slug}`}
             className="group flex min-w-0 flex-col overflow-hidden rounded-xl border transition-colors hover:border-foreground/25 hover:bg-muted/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
           >
-            <div className="flex h-16 border-b" aria-label={`${site.title} color palette`}>
+            <img src={site.images[0]!.url} alt={`${site.title} website screenshot`} width={site.images[0]!.width} height={site.images[0]!.height} loading="lazy" className="aspect-[16/10] w-full border-b object-cover object-top" />
+            <div className="flex h-2 border-b" aria-label={`${site.title} color palette`}>
               {site.colors.map(color => (
                 <span key={color} className="min-w-0 flex-1" style={{ backgroundColor: color }} title={color} />
               ))}

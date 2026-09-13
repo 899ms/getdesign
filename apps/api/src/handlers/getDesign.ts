@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import {
   RunDesignError,
+  embedDesignImages,
   type RunDesignEvent,
   type RunDesignOptions,
   type RunDesignResult,
@@ -95,6 +96,7 @@ function jsonResult(result: RunDesignResult) {
   return {
     url: result.url,
     markdown: result.markdown,
+    images: result.images,
     doc: result.doc,
     tokens: result.tokens,
     visualDescription: result.visualDescription,
@@ -196,7 +198,7 @@ export function createGetDesignHandler(runDesign: RunDesignFn) {
         });
       }
 
-      return c.body(result.markdown, 200, {
+      return c.body(embedDesignImages(result.markdown, result.images), 200, {
         "content-type": "text/markdown; charset=utf-8",
         "cache-control": "no-store",
         "x-getdesign-mode": result.mode,

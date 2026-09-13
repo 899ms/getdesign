@@ -1,6 +1,6 @@
 "use client"
 
-import { downloadDesignMd } from "@/lib/download-design-md"
+import { downloadDesignMd, downloadDesignBundle } from "@/lib/download-design-md"
 import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -25,10 +25,12 @@ export function ExportActions({
   filename: string
 }) {
   const [copied, setCopied] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(content)
+      await navigator.clipboard.writeText(content.replaceAll("](/cached-sites/", `](${window.location.origin}/cached-sites/`))
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1500)
     } catch {
@@ -36,11 +38,21 @@ export function ExportActions({
     }
   }
 
-  const handleDownload = () => downloadDesignMd(content, filename)
+  const handleDownload = async (bundle = false) => {
+    setBusy(true)
+    setError(null)
+    try {
+      if (bundle) await downloadDesignBundle(content)
+      else await downloadDesignMd(content, filename)
+    } catch { setError("Download failed. Please retry.") }
+    finally { setBusy(false) }
+  }
 
   return (
     <TooltipProvider>
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex flex-wrap items-center gap-1">
+        {error ? <span role="alert" className="text-xs text-destructive">{error}</span> : null}
+        {content.includes("![") ? <Button variant="outline" size="sm" disabled={busy} onClick={() => void handleDownload(true)}>Download with images</Button> : null}
         <Tooltip>
           <TooltipTrigger
             render={
@@ -62,7 +74,8 @@ export function ExportActions({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleDownload}
+                disabled={busy}
+                onClick={() => void handleDownload()}
                 aria-label="Download design.md"
               >
                 <HugeiconsIcon icon={Download01Icon} />

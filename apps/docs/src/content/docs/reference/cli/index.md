@@ -9,5 +9,5 @@ editUrl: false
 > Extracted from `@getdesign/cli --help`.
 
 ```text
-The CLI entry at /Users/mohtashammurshidmadani/Desktop/getdesign/packages/cli/bin/getdesign.mjs was not found. This placeholder will be replaced once the CLI ships.
+The CLI entry at /home/azureuser/getdesign-pr26/packages/cli/bin/getdesign.mjs was not found. This placeholder will be replaced once the CLI ships.
 ```

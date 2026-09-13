@@ -155,6 +155,7 @@ export function buildSdkInstall(): string {
 export function buildSdkGetDesignSnippet(siteUrl: string): string {
   const url = exampleUrl(siteUrl);
   return `import { getDesign } from "@getdesign/sdk";
+import { mkdir, writeFile } from "node:fs/promises";
 
 const system = await getDesign("${url}", {
   credentials: {
@@ -162,7 +163,11 @@ const system = await getDesign("${url}", {
     openaiApiKey: process.env.OPENAI_API_KEY,
   },
 });
-console.log(system.markdown);`;
+await mkdir("images", { recursive: true });
+for (const image of system.images) {
+  await writeFile(image.path, Buffer.from(image.imageBase64, "base64"));
+}
+await writeFile("design.md", system.markdown);`;
 }
 
 export function buildSdkStreamSnippet(siteUrl: string): string {

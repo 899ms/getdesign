@@ -10,7 +10,7 @@ import {
   runVisual,
   type VisualResult,
 } from "@getdesign/agent";
-import { renderDesignMd } from "@getdesign/tools/render";
+import { renderDesignMd, withDesignImages } from "@getdesign/tools/render";
 import type { CrawlSiteResult } from "@getdesign/tools";
 import type { ScreenshotArtifact } from "@getdesign/tools/daytona";
 import type { DesignDoc, DesignTokens } from "@getdesign/types";
@@ -341,7 +341,11 @@ async function runRenderStep({
   if (!doc) throw new StepError("synthesize", "Design doc artifact missing.");
 
   await beginStep(convex, runId, userId, "render", "Rendering markdown");
-  const baseMarkdown = renderDesignMd(doc);
+  const images = run.mode === "text_only" ? [] : await convex.query(api.designRunArtifacts.getTileUrls, { runId, userId });
+  if (run.mode !== "text_only" && (!images.length || images.some(image => !image.url))) {
+    throw new StepError("capture", "Screenshots are required. Retry capture or explicitly choose text-only.");
+  }
+  const baseMarkdown = withDesignImages(renderDesignMd(doc), images.map((image, index) => ({ url: image.url!, alt: `Captured page tile ${index + 1}` })));
   const markdown =
     run.mode === "text_only"
       ? prependTextOnlyBanner(baseMarkdown)

@@ -6,6 +6,7 @@
  */
 import { mkdir, writeFile, rename } from "node:fs/promises";
 import { resolve } from "node:path";
+import { saveCachedImages } from "./cached-site-images";
 import { runDesign } from "../packages/agent/src/runDesign";
 import { checkPaletteGrounding, joinStylesheetCss } from "./brand-smoke/grounding";
 import { cachedSiteSchema, type CachedSite } from "../convex/lib/cachedSiteSchema";
@@ -48,7 +49,9 @@ await Promise.all(Array.from({ length: 3 }, async () => {
       if (!grounding.pass) throw new Error("Palette contains colors not grounded in the source CSS");
       const colors = [...new Set([...result.markdown.matchAll(/`(#[A-Fa-f0-9]{6})(?![A-Fa-f0-9])/g)].map(m => m[1]!.toUpperCase()))].slice(0, 8);
       const summary = result.markdown.match(/## 1\. Visual Theme & Atmosphere\s+([^\n]+)/)?.[1]?.trim() ?? `${title}'s color palette, typography, layout and component guidance.`;
-      const snapshot = cachedSiteSchema.parse({ slug, title, url, capturedAt: new Date().toISOString(), summary, colors, markdown: result.markdown, mode: result.mode, tiles: result.tiles });
+      const images = await saveCachedImages(slug, result.visual);
+      const markdown = result.markdown.replaceAll("](images/hero.webp)", `](${images[0]!.url})`).replaceAll("](images/full-page.webp)", `](${images[1]!.url})`);
+      const snapshot = cachedSiteSchema.parse({ images, slug, title, url, capturedAt: new Date().toISOString(), summary, colors, markdown, mode: result.mode, tiles: result.tiles });
       const serialized = JSON.stringify(snapshot, null, 2) + "\n";
       for (const name of ["DAYTONA_API_KEY", "OPENAI_API_KEY", "WORKOS_API_KEY", "WORKOS_COOKIE_PASSWORD", "GETDESIGN_CREDENTIALS_KEY"]) {
         const value = process.env[name];

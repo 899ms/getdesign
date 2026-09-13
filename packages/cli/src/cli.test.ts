@@ -40,3 +40,20 @@ describe("outputPath", () => {
     expect(resolveOutputPath("/proj", "design.md", "https://a.com")).toBe("/proj/design.md");
   });
 });
+
+
+test("CLI writes real image files beside custom-named markdown with resolvable references", async () => {
+  const { mkdtemp, readFile, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { writeDesignFiles } = await import("./runGetdesign");
+  const dir = await mkdtemp(join(tmpdir(), "getdesign-images-"));
+  const bytes = Buffer.from("RIFFtestWEBP");
+  try {
+    await writeDesignFiles(join(dir, "My design.md"), "![Hero](images/hero.webp)", [{ path: "images/hero.webp", alt: "Hero", imageBase64: bytes.toString("base64"), mimeType: "image/webp", width: 1, height: 1 }]);
+    const markdown = await readFile(join(dir, "My design.md"), "utf8");
+    const path = decodeURIComponent(markdown.match(/\]\(([^)]+)\)/)![1]!);
+    expect(await readFile(join(dir, path))).toEqual(bytes);
+    expect(path).toBe("My design.images/hero.webp");
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

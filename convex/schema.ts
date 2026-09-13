@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { cachedSiteFields } from "./lib/cachedSiteFields";
 
 export default defineSchema({
-  cachedSites: defineTable({ ...cachedSiteFields, updatedAt: v.number() }).index("by_slug", ["slug"]),
+  cachedSites: defineTable({ ...cachedSiteFields, images: v.optional(cachedSiteFields.images), updatedAt: v.number() }).index("by_slug", ["slug"]),
   waitlist: defineTable({
     email: v.string(),
     source: v.optional(v.string()),

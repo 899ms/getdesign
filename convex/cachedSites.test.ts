@@ -88,3 +88,11 @@ describe("Shared database catalog", () => {
     expect(await invoke(get, { db, auth: auth("user") }, { slug: "private-run-id" })).toBeNull();
   });
 });
+
+test("deployment backfills image metadata on legacy text-and-palette seed rows", async () => {
+  const { db, rows } = database();
+  await invoke(seed, { db });
+  delete (rows[0] as Partial<Row>).images;
+  expect(await invoke(seed, { db })).toMatchObject({ updated: 1 });
+  expect(rows[0]!.images).toEqual(snapshots[0]!.images);
+});

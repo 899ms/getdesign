@@ -15,6 +15,7 @@ let artifacts: Record<string, { markdown?: string }> = {};
 
 const query = mock(async (_reference: unknown, args: Record<string, unknown>) => {
   if (getFunctionName(_reference as Parameters<typeof getFunctionName>[0]) === "cachedSites:list") return listCachedSites();
+  if (getFunctionName(_reference as Parameters<typeof getFunctionName>[0]) === "designRunArtifacts:getTileUrls") return [{ url: "https://example.com/captured.png" }];
   if ("runId" in args) return artifacts[String(args.runId)] ?? {};
   return recent.slice(0, Number(args.limit));
 });
@@ -109,6 +110,7 @@ describe("Overview recent-run summary", () => {
       { userId: "overview-test-user", limit: 24 },
       { userId: "overview-test-user", runId: "visible" },
       { userId: "overview-test-user", runId: "missing" },
+      { userId: "overview-test-user", runId: "visible" },
     ]);
   });
 

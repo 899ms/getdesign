@@ -46,3 +46,10 @@ test("production never silently replaces database data with the bundled catalog"
   expect(canUseBundledCatalog({ VERCEL_ENV: "preview" }, new Error("Unauthorized"))).toBe(false);
   expect(canUseBundledCatalog({ VERCEL_ENV: "preview" }, new Error("Network failure"))).toBe(false);
 });
+
+
+test("all seeded images decode at the declared dimensions and match their document and content hash", async () => {
+  const { validateCachedSiteImages } = await import("../../../scripts/validate-cached-site-images");
+  await validateCachedSiteImages();
+  for (const site of listCachedSites()) expect(site.images.length).toBeGreaterThanOrEqual(2);
+});

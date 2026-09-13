@@ -104,6 +104,8 @@ async function smokeBrand(
     );
 
     await mkdir(brandDir, { recursive: true });
+    await mkdir(resolve(brandDir, "images"), { recursive: true });
+    for (const image of result.images) await writeFile(resolve(brandDir, image.path), Buffer.from(image.imageBase64, "base64"));
     await writeFile(resolve(brandDir, "design.md"), result.markdown, "utf8");
 
     const row: BrandResult = {

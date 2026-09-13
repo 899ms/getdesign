@@ -9,6 +9,7 @@ import type { Doc } from "./_generated/dataModel";
 function summary(site: Doc<"cachedSites">) {
   return {
     slug: site.slug, title: site.title, url: site.url, capturedAt: site.capturedAt,
+    images: site.images ?? [],
     summary: site.summary, colors: site.colors, mode: site.mode, tiles: site.tiles,
   };
 }

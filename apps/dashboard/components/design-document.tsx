@@ -12,6 +12,7 @@ export function DesignDocument({ content }: { content: string }) {
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
+            img: ({ src, alt }) => <a href={typeof src === "string" ? src : undefined} target="_blank" rel="noreferrer"><img src={src} alt={alt ?? "Captured website"} loading="lazy" className="my-4 max-h-[600px] w-full rounded-lg border object-contain object-top" /></a>,
             h1: ({ children }) => (
               <h1 className="text-2xl font-semibold tracking-tight mb-6">{children}</h1>
             ),

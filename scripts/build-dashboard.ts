@@ -44,6 +44,8 @@ export async function buildDashboard(
 }
 
 if (import.meta.main) {
+  const { validateCachedSiteImages } = await import("./validate-cached-site-images");
+  await validateCachedSiteImages();
   await buildDashboard(process.env, async args => {
     const child = Bun.spawn([process.execPath, ...args], {
       cwd: resolve(import.meta.dir, ".."), stdin: "inherit", stdout: "inherit", stderr: "inherit",

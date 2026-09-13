@@ -68,3 +68,5 @@ export type {
   ScreenshotArtifact,
   Viewport,
 } from "./types.js";
+
+export { exportScreenshot } from "./export-image.js";

@@ -22,7 +22,7 @@ Options:
   --out <path>                Output file or directory (default: ./getdesign-runs/<slug>/design.md)
   --daytona-api-key <key>     Daytona key for this run (or DAYTONA_API_KEY)
   --openai-api-key <key>      OpenAI key for this run (or OPENAI_API_KEY)
-  --text-only-fallback        Continue if visual capture is unavailable
+  --text-only-fallback        Explicitly skip screenshots (text-only output)
   --help, -h                  Show help
   --version, -v               Show version
 

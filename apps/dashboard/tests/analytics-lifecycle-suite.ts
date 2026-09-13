@@ -22,6 +22,7 @@ const query = mock(async (reference: Parameters<typeof getFunctionName>[0]) => {
       doc: {},
       crawl: { sourceUrl: "https://secret.test", stylesheets: [] },
     };
+  if (name === "designRunArtifacts:getTileUrls") return [{ url: "https://storage.test/tile.png" }];
   reads++;
   if (failFinalRead && reads > 1) throw new Error("read unavailable");
   return structuredClone(run);
@@ -69,6 +70,7 @@ mock.module("@getdesign/agent", () => ({
   runVisual: mock(),
 }));
 mock.module("@getdesign/tools/render", () => ({
+  withDesignImages: (markdown: string) => markdown,
   renderDesignMd: () => {
     if (failRender)
       throw new Error("SECRET provider error https://secret.test");

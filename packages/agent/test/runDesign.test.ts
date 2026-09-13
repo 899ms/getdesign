@@ -118,7 +118,7 @@ test("runDesign end-to-end with stubbed fetch and mocked LLM (text-only)", async
 
   const result = await runDesign("https://example.com", {
     model: mockModel,
-    visualRequirement: "skip_silently",
+    visualRequirement: "text_only_fallback",
     onPhase: (event) => {
       if ("status" in event && event.status === "ok") {
         completedPhases.push(event.phase);
@@ -208,4 +208,9 @@ test("synthesizer caps tiles at MAX_SYNTHESIS_TILES and notes the omission", asy
   expect(calls.length).toBe(1);
   expect(calls[0]!.tileImageCount).toBe(MAX_SYNTHESIS_TILES);
   expect(calls[0]!.userText).toContain(`tiles ${MAX_SYNTHESIS_TILES + 1}..15 omitted`);
+});
+
+
+test("default visual extraction fails when screenshots are unavailable", async () => {
+  await expect(runDesign("https://example.com", { model: makeMockModel() })).rejects.toMatchObject({ code: "capture_failed" });
 });

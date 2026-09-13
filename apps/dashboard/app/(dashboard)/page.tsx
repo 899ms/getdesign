@@ -21,6 +21,8 @@ type DesignRun = {
   theme: string
   colors: string[]
   accent: string
+  image: string | null
+  textOnly: boolean
 }
 
 function parseDesignMd(content: string): Pick<DesignRun, "title" | "theme" | "colors" | "accent"> {
@@ -66,13 +68,16 @@ export default async function Page() {
     await Promise.all(
       recent
         .filter((run) => run.status === "completed")
-        .map(async (run) => {
+        .map(async (run): Promise<DesignRun | null> => {
           const artifacts = await convex.query(api.designRunArtifacts.getForRun, {
             runId: run._id,
             userId: user.id,
           })
           if (typeof artifacts.markdown !== "string") return null
+          const tiles = run.mode === "text_only" ? [] : await convex.query(api.designRunArtifacts.getTileUrls, { runId: run._id, userId: user.id })
           return {
+            image: tiles[0]?.url ?? null,
+            textOnly: run.mode === "text_only",
             slug: String(run._id),
             domain: run.domain,
             ...parseDesignMd(artifacts.markdown),
@@ -120,17 +125,8 @@ export default async function Page() {
                 href={`/runs/${run.slug}`}
                 className="flex items-center gap-4 px-5 py-3 hover:bg-muted/30 transition-colors"
               >
-                {/* Color strip */}
-                <div className="flex h-8 w-16 sm:w-32 shrink-0 rounded-md overflow-hidden border">
-                  {run.colors.map((color, i) => (
-                    <div
-                      key={`${color}-${i}`}
-                      className="flex-1"
-                      style={{ backgroundColor: color }}
-                      title={color}
-                    />
-                  ))}
-                </div>
+                {run.image ? <img src={run.image} alt={`${run.title} website screenshot`} loading="lazy" className="h-16 w-24 shrink-0 rounded-md border object-cover object-top sm:w-32" /> : <span className="flex h-16 w-24 shrink-0 items-center justify-center rounded-md border text-center text-xs text-muted-foreground sm:w-32">{run.textOnly ? "Text-only" : "Capture unavailable"}</span>}
+
 
                 {/* Title + theme */}
                 <div className="flex-1 min-w-0">
