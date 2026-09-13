@@ -18,10 +18,15 @@ let auth: { user: { id: string } | null; accessToken?: string };
 let storedKeys: ProviderKeyMeta[] = [];
 let recentRuns: RecentRunFixture[] = [];
 let convexAuthenticated = true;
+let cachedSites = listCachedSites();
+let catalogError: Error | null = null;
 const query = mock(async (reference: unknown, args: Record<string, unknown> = {}) => {
   const name = getFunctionName(reference as Parameters<typeof getFunctionName>[0]);
   if (name === "userCredentials:listForUser") return storedKeys;
-  if (name === "cachedSites:list") return listCachedSites();
+  if (name === "cachedSites:list") {
+    if (catalogError) throw catalogError;
+    return cachedSites;
+  }
   if (name === "designRuns:listRecent") return recentRuns.slice(0, Number(args.limit ?? 3));
   throw new Error(`Unexpected query ${name}`);
 });
@@ -77,6 +82,8 @@ beforeEach(() => {
   storedKeys = [];
   recentRuns = [];
   convexAuthenticated = true;
+  cachedSites = listCachedSites();
+  catalogError = null;
   getConvexClient.mockClear();
   query.mockClear();
 });
@@ -246,6 +253,38 @@ describe("extraction onboarding", () => {
     expect(runs).toContain('href="/runs/oldest"');
     expect(runs).not.toContain('href="/runs/hidden"');
     expect(runs).not.toContain("hidden.example");
+  });
+
+  test("Agent matches and refreshes database-only cached sites instead of the bundled seed", async () => {
+    cachedSites = [{
+      ...listCachedSites()[0]!,
+      slug: "database-only", title: "Database only", url: "https://database-only.example",
+    }];
+    const page = await AgentPage({ searchParams: Promise.resolve({ refresh: "database-only" }) });
+    const expected = { slug: "database-only", title: "Database only", url: "https://database-only.example" };
+    expect(page.props.cachedSites).toEqual([expected]);
+    expect(page.props.exampleSuggestions).toEqual([expected]);
+    expect(page.props.refreshSite).toEqual(expected);
+    expect(getConvexClient).toHaveBeenCalledWith("fixture-token");
+    expect(query.mock.calls.map(([reference]) => getFunctionName(reference as Parameters<typeof getFunctionName>[0])))
+      .toContain("cachedSites:list");
+  });
+
+  test("Agent does not advertise bundled sites when the production catalog is empty or unavailable", async () => {
+    const previous = process.env.VERCEL_ENV;
+    process.env.VERCEL_ENV = "production";
+    try {
+      cachedSites = [];
+      const page = await AgentPage({ searchParams: Promise.resolve({ refresh: listCachedSites()[0]!.slug }) });
+      expect(page.props.cachedSites).toEqual([]);
+      expect(page.props.exampleSuggestions).toEqual([]);
+      expect(page.props.refreshSite).toBeNull();
+      catalogError = new Error("Could not find public function cachedSites:list");
+      await expect(AgentPage({ searchParams: Promise.resolve({}) })).rejects.toThrow("cachedSites:list");
+    } finally {
+      if (previous === undefined) delete process.env.VERCEL_ENV;
+      else process.env.VERCEL_ENV = previous;
+    }
   });
 
   test("completed runs have a visible, keyboard-accessible design export menu", () => {

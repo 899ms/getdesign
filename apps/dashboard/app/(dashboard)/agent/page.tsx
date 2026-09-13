@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { hasCachedSiteImages } from "@convex/lib/cachedSiteSchema";
 import { AgentRecentRunsSkeleton } from "@/components/dashboard-skeletons";
-import { listCachedSites, pickRandomItems } from "@/lib/cached-sites";
+import { loadCachedSites, pickRandomItems } from "@/lib/cached-sites";
 
 import { AgentCommand } from "./agent-command";
 import { AgentRecentRunsLoader } from "./agent-recent-runs";
@@ -18,8 +18,11 @@ export default async function AgentPage({ searchParams }: {
     redirect("/sign-in");
   }
 
-  const { refresh } = await searchParams;
-  const catalog = listCachedSites().filter(hasCachedSiteImages).map(({ slug, title, url }) => ({
+  const [{ refresh }, cachedSites] = await Promise.all([
+    searchParams,
+    loadCachedSites(accessToken),
+  ]);
+  const catalog = cachedSites.filter(hasCachedSiteImages).map(({ slug, title, url }) => ({
     slug,
     title,
     url,

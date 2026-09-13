@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { DeveloperSurfaces } from "@/app/(dashboard)/account/developer-surfaces";
-import { InputBar } from "@/components/agent-elements/input-bar";
+import { AgentInputPlaceholder } from "@/components/agent-input-placeholder";
 import { BrandMark } from "@/components/brand-mark";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -257,18 +257,7 @@ export function AgentLoading() {
       <div className="mb-8 flex justify-center">
         <BrandMark size={34} />
       </div>
-      <InputBar
-        size="lg"
-        value=""
-        onChange={() => {}}
-        sendLabel="Start extraction"
-        className="px-0 pb-0"
-        status="ready"
-        disabled
-        placeholder="Enter a URL..."
-        onStop={() => {}}
-        onSend={() => {}}
-      />
+      <AgentInputPlaceholder />
       <AgentRecentRunsSkeleton />
     </div>
   );
