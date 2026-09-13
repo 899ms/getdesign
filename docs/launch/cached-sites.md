@@ -9,8 +9,9 @@ Private extraction history remains in the separate, owner-scoped `designRuns` an
 The dashboard's checked-in `vercel.json` runs `bun run build:dashboard:vercel` from the repository root. `scripts/build-dashboard.ts` performs these steps in order:
 
 1. Require a production `CONVEX_DEPLOY_KEY` in the Vercel Production environment. A missing, preview or development key stops the build before deployment.
-2. Run `convex deploy` with the dashboard build command and `--cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL`. This connects the built frontend to the deployment selected by that key and deploys the backend/schema.
-3. Run the internal `cachedSites:seed` mutation using the same deployment key. A seed failure fails the Vercel build, preventing publication of the frontend.
+2. Build the dashboard's generated workspace dependencies in order: types, content, tools, agent and SDK. These packages export `dist` files that are absent in a fresh checkout. A dependency failure stops the build before any deployment.
+3. Run `convex deploy` with the dashboard build command and `--cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL`. This connects the built frontend to the deployment selected by that key and deploys the backend/schema.
+4. Run the internal `cachedSites:seed` mutation using the same deployment key. A seed failure fails the Vercel build, preventing publication of the frontend.
 
 Configure `CONVEX_DEPLOY_KEY` with permission to deploy and execute the internal seed function. Keep `WORKOS_CLIENT_ID` configured in both Convex and the dashboard, along with the existing dashboard WorkOS and encryption settings. The deployment key is server-only and is never passed to browser code.
 

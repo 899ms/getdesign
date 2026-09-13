@@ -69,3 +69,12 @@ The dashboard's Vercel build configuration now runs `scripts/build-dashboard.ts`
 Verification: 275 automated tests passed, with 39 previously verified SEO cases skipped. New tests cover two account identities sharing all 12 documents, anonymous rejection, internal-only seeding, duplicate-free redeployment, snapshot updates, protection of newer/extra data, production key validation, correct seed order, and failure propagation. The deployment key validation tests passed again after tightening preview-key shape checks. Dashboard production build/TypeScript and targeted lint passed. Native Chromium rechecked all 12 downloads and cache navigation against the current local/preview compatibility path, with no page errors or paid requests; its temporary user was deleted.
 
 No live production database was deployed or seeded in this follow-up. The workspace has no Convex deployment configuration/deploy key for executing the production hook; the registered backend handlers and deployment orchestration were tested locally. Production seeding will execute during the configured Vercel production build.
+
+
+## Clean deployment build fix
+
+The first deployment-hook revision invoked Next.js before compiling the dashboard's workspace packages. Vercel's fresh checkout therefore could not resolve `@getdesign/agent` and `@getdesign/tools/render`, whose exports point into generated `dist` directories. Previously built local artifacts masked the omission.
+
+Every build mode now compiles types, content, tools, agent and SDK in dependency order before the frontend or Convex deployment command. Key validation still occurs before any production/preview work, and a dependency build failure prevents deployment and seeding.
+
+Verified with Bun 1.3.14, matching Vercel: moved all five package output directories and the dashboard's entire `.next` output out of the checkout, reproduced the reported missing-module errors using the old direct build command, then ran the corrected `build:dashboard:vercel` preview command. It rebuilt every package and completed the Next.js production build and TypeScript checks. All 277 automated tests passed, with 39 previously verified SEO cases skipped. New tests inspect workspace manifests to check package coverage and dependency order in each deployment mode.

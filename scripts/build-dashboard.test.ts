@@ -5,7 +5,7 @@ describe("Dashboard deployment and database seed", () => {
   test("production runs the seed after successful deployment", async () => {
     const commands: string[][] = [];
     await buildDashboard({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake" }, async args => { commands.push(args); return 0; });
-    expect(commands).toEqual([
+    expect(commands.slice(-2)).toEqual([
       ["x", "convex", "deploy", "--cmd", "bun run --cwd apps/dashboard build", "--cmd-url-env-var-name", "NEXT_PUBLIC_CONVEX_URL"],
       ["x", "convex", "run", "cachedSites:seed", "{}"],
     ]);
@@ -19,20 +19,56 @@ describe("Dashboard deployment and database seed", () => {
   });
   test("failed deployment skips seed and failed seed fails the build", async () => {
     const env = { VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake" };
+    const dependencies = dashboardBuildSteps(env).length - 2;
     let calls = 0;
-    await expect(buildDashboard(env, async () => { calls++; return 1; })).rejects.toThrow("must not publish");
-    expect(calls).toBe(1);
+    await expect(buildDashboard(env, async () => ++calls <= dependencies ? 0 : 1)).rejects.toThrow("must not publish");
+    expect(calls).toBe(dependencies + 1);
     calls = 0;
-    await expect(buildDashboard(env, async () => ++calls === 1 ? 0 : 1)).rejects.toThrow("Seed shared sites in production failed");
-    expect(calls).toBe(2);
+    await expect(buildDashboard(env, async () => ++calls <= dependencies + 1 ? 0 : 1)).rejects.toThrow("Seed shared sites in production failed");
+    expect(calls).toBe(dependencies + 2);
   });
   test("preview seeds only its isolated deployment and cannot use a production key", () => {
     const steps = dashboardBuildSteps({ VERCEL_ENV: "preview", CONVEX_DEPLOY_KEY: "preview:team:project|fake" });
-    expect(steps).toHaveLength(1);
-    expect(steps[0]!.args.slice(-2)).toEqual(["--preview-run", "cachedSites:seed"]);
+    expect(steps).toHaveLength(6);
+    expect(steps.at(-1)!.args.slice(-2)).toEqual(["--preview-run", "cachedSites:seed"]);
     for (const key of ["prod:test|fake", "dev:test|fake", "preview:shared-backend|fake"]) {
       expect(() => dashboardBuildSteps({ VERCEL_ENV: "preview", CONVEX_DEPLOY_KEY: key })).toThrow("refusing to deploy");
     }
-    expect(dashboardBuildSteps({ VERCEL_ENV: "preview" })[0]!.args).toEqual(["run", "--cwd", "apps/dashboard", "build"]);
+    expect(dashboardBuildSteps({ VERCEL_ENV: "preview" }).at(-1)!.args).toEqual(["run", "--cwd", "apps/dashboard", "build"]);
   });
+});
+
+
+test("all build modes compile exported workspace packages before the dashboard", async () => {
+  for (const env of [
+    {}, { VERCEL_ENV: "preview" },
+    { VERCEL_ENV: "preview", CONVEX_DEPLOY_KEY: "preview:team:project|fake" },
+    { VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake" },
+  ]) {
+    const commands: string[][] = [];
+    await buildDashboard(env, async args => { commands.push(args); return 0; });
+    const builtPackages = commands.filter(args => args[0] === "run" && args[2]?.startsWith("packages/")).map(args => args[2]!);
+    const dashboard = await Bun.file(new URL("../apps/dashboard/package.json", import.meta.url)).json();
+    for (const [name, version] of Object.entries(dashboard.dependencies)) {
+      if (version !== "workspace:*" || !name.startsWith("@getdesign/")) continue;
+      const path = `packages/${name.split("/")[1]}`;
+      const manifest = await Bun.file(new URL(`../${path}/package.json`, import.meta.url)).json();
+      if (!manifest.main?.startsWith("./dist/")) continue;
+      expect(builtPackages).toContain(path);
+      for (const dependency of Object.keys(manifest.dependencies ?? {})) {
+        if (!dependency.startsWith("@getdesign/")) continue;
+        const dependencyPath = `packages/${dependency.split("/")[1]}`;
+        if (builtPackages.includes(dependencyPath)) {
+          expect(builtPackages.indexOf(dependencyPath)).toBeLessThan(builtPackages.indexOf(path));
+        }
+      }
+    }
+    expect(commands.findIndex(args => args.includes("apps/dashboard") || args.includes("convex"))).toBe(builtPackages.length);
+  }
+});
+
+test("a failed dependency build prevents both frontend build and deployment", async () => {
+  const commands: string[][] = [];
+  await expect(buildDashboard({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake" }, async args => { commands.push(args); return 1; })).rejects.toThrow("Build @getdesign/types failed");
+  expect(commands).toEqual([["run", "--cwd", "packages/types", "build"]]);
 });
