@@ -45,6 +45,7 @@ function NavPendingHint() {
 }
 
 function FlatNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
+  const { setOpenMobile } = useSidebar()
   const isActive =
     !item.external &&
     (pathname === item.url ||
@@ -52,7 +53,7 @@ function FlatNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
   const link = item.external ? (
     <a href={item.url} target="_blank" rel="noreferrer" />
   ) : (
-    <Link href={item.url} />
+    <Link href={item.url} onNavigate={() => setOpenMobile(false)} />
   )
 
   return (
@@ -62,7 +63,7 @@ function FlatNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
         isActive={isActive}
         render={link}
         className={cn(
-          "gap-2.5 py-1.5",
+          "min-h-11 gap-2.5 py-1.5 md:min-h-0",
           !item.external && "has-[[data-nav-pending]]:opacity-60",
         )}
       >
@@ -92,7 +93,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const [commandOpen, setCommandOpen] = React.useState(false)
   const returnFocusRef = React.useRef<HTMLElement | null>(null)
-  const { setOpenMobile } = useSidebar()
+  const { isMobile, setOpenMobile } = useSidebar()
   const isMac = React.useSyncExternalStore(
     subscribePlatform,
     () => isApplePlatform(navigator.platform),
@@ -120,12 +121,13 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
           <div className="flex items-center justify-between">
             <Link
               href="/"
+              onNavigate={() => setOpenMobile(false)}
               className="flex items-center gap-2 px-1 group-data-[collapsible=icon]:hidden"
             >
               <BrandMark size={18} />
               <span className="truncate text-sm font-semibold">getdesign</span>
             </Link>
-            <SidebarTrigger className="size-8 group-data-[collapsible=icon]:mx-auto [&_svg]:size-[18px]" />
+            <SidebarTrigger aria-label={isMobile ? "Close navigation" : "Toggle Sidebar"} className="size-11 group-data-[collapsible=icon]:mx-auto md:size-8 [&_svg]:size-[18px]" />
           </div>
 
           {/* Search */}

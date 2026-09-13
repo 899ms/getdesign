@@ -61,15 +61,15 @@ export function RunPageShell({
     <LayoutGroup id={`run-${runId}`}>
       <div className="flex min-h-svh flex-1 items-stretch">
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+          <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-3 border-b px-4 py-3">
             <Breadcrumb className="min-w-0">
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbLink href="/runs">Runs</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="max-w-[16rem] truncate sm:max-w-sm" title={siteName}>
+                <BreadcrumbItem className="min-w-0 flex-1">
+                  <BreadcrumbPage className="max-w-[min(16rem,50vw)] truncate sm:max-w-sm" title={siteName}>
                     {siteName}
                   </BreadcrumbPage>
                 </BreadcrumbItem>

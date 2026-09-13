@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AnalyticsIdentity } from "@/components/analytics-identity";
 import { AppSidebar } from "@/components/app-sidebar";
+import { MobileNavigation } from "@/components/mobile-navigation";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default async function DashboardLayout({
@@ -28,7 +29,10 @@ export default async function DashboardLayout({
           avatar: user.profilePictureUrl ?? "",
         }}
       />
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="min-w-0">
+        <MobileNavigation />
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }

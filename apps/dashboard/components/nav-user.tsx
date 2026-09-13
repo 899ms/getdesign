@@ -43,7 +43,7 @@ export function NavUser({
     avatar: string
   }
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile, setOpenMobile } = useSidebar()
   const initials =
     user.name
       .split(" ")
@@ -96,11 +96,11 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem render={<Link href="/account" />}>
+              <DropdownMenuItem render={<Link href="/account" onNavigate={() => setOpenMobile(false)} />}>
                 <HugeiconsIcon icon={CheckmarkBadgeIcon} strokeWidth={2} />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/team" />}>
+              <DropdownMenuItem render={<Link href="/team" onNavigate={() => setOpenMobile(false)} />}>
                 <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
                 Team
               </DropdownMenuItem>
