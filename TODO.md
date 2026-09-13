@@ -78,6 +78,16 @@ Implementation status and remaining beta checks. See [the V1 integration review]
   - Keep private output behind the same run-owner checks as `design.md`.
   - Verify keyboard access, mobile layout, and missing-artifact behavior.
 
+## Public runs
+
+- [ ] Let an owner make a completed run public so humans and agents can share and reuse it.
+  - Runs stay private by default. Publishing is an explicit action on `/runs/[id]`.
+  - Humans get a stable URL they can open without being the owner.
+  - Agents can fetch the published `design.md` (and screenshots if they ship with the run) from the API, CLI, SDK, or skill without the owner's provider keys.
+  - Decide URL shape, whether unauthenticated reads are allowed, which artifacts are included, and how unpublish or delete works.
+  - Unpublished runs stay behind the existing owner checks. A public run must not expose other private runs or credentials.
+  - This is user-owned sharing. It is not a curated Examples / `cachedSites` entry.
+
 ## Remaining launch smoke checks
 
 - [ ] Use a fresh signed-in account to verify provider-key save, refresh, removal and return to Agent.
@@ -89,3 +99,5 @@ Implementation status and remaining beta checks. See [the V1 integration review]
 
 - Overview: `apps/dashboard/app/(dashboard)/page.tsx`
 - Agent: `apps/dashboard/app/(dashboard)/agent/page.tsx`
+- Run: `apps/dashboard/app/(dashboard)/runs/[slug]/run-page-shell.tsx`
+- Ownership: `convex/designRuns.ts`
