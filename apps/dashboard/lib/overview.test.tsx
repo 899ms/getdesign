@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { getFunctionName } from "convex/server";
+import { listCachedSites } from "./cached-sites";
 import { ExtractionGuide } from "../components/extraction-guide";
 
 type RunFixture = {
@@ -12,6 +14,7 @@ let recent: RunFixture[] = [];
 let artifacts: Record<string, { markdown?: string }> = {};
 
 const query = mock(async (_reference: unknown, args: Record<string, unknown>) => {
+  if (getFunctionName(_reference as Parameters<typeof getFunctionName>[0]) === "cachedSites:list") return listCachedSites();
   if ("runId" in args) return artifacts[String(args.runId)] ?? {};
   return recent.slice(0, Number(args.limit));
 });
@@ -102,6 +105,7 @@ describe("Overview recent-run summary", () => {
       expect(html).not.toContain(`href="/runs/${id}"`);
     }
     expect(query.mock.calls.map(([, args]) => args)).toEqual([
+      {},
       { userId: "overview-test-user", limit: 24 },
       { userId: "overview-test-user", runId: "visible" },
       { userId: "overview-test-user", runId: "missing" },

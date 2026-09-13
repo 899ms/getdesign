@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { loadCachedSites } from "@/lib/cached-sites"
 import { CachedSites } from "@/components/cached-sites"
 import { withAuth } from "@workos-inc/authkit-nextjs"
 import { redirect } from "next/navigation"
@@ -51,10 +52,11 @@ function parseDesignMd(content: string): Pick<DesignRun, "title" | "theme" | "co
 export default async function Page() {
   const { user, accessToken } = await withAuth()
 
-  if (!user) {
+  if (!user || !accessToken) {
     redirect("/sign-in")
   }
 
+  const cachedSites = await loadCachedSites(accessToken)
   const convex = getConvexClient(accessToken)
   const recent = await convex.query(api.designRuns.listRecent, {
     userId: user.id,
@@ -95,7 +97,7 @@ export default async function Page() {
 
         <ExtractionOnboarding />
 
-        <CachedSites />
+        <CachedSites sites={cachedSites} />
 
         {/* Recent runs */}
         <div className="rounded-xl border">

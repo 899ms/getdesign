@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { formatCaptureDate, listCachedSites } from "@/lib/cached-sites";
+import { formatCaptureDate } from "@/lib/cached-sites";
 
-export function CachedSites() {
-  const sites = listCachedSites();
+export function CachedSites({ sites }: { sites: import("@/lib/cached-site-schema").CachedSiteSummary[] }) {
   if (sites.length === 0) return null;
 
   return (

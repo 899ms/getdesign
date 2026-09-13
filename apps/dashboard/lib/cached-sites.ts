@@ -1,4 +1,7 @@
-import snapshots from "@/data/cached-sites.json";
+import snapshots from "@convex/seedData/cached-sites.json";
+import { canUseBundledCatalog } from "./cached-site-fallback";
+import { api } from "@convex/_generated/api";
+import { getConvexClient } from "./convex-server";
 import { cachedSiteSchema, type CachedSiteSummary } from "./cached-site-schema";
 
 // Curated public-site snapshots only. Never derived from users' private runs.
@@ -19,4 +22,27 @@ export function formatCaptureDate(value: string) {
   return new Intl.DateTimeFormat("en", {
     month: "short", day: "numeric", year: "numeric", timeZone: "UTC",
   }).format(new Date(value));
+}
+
+
+/** Production always reads the seeded database. Old local/preview backends can
+ * still display the curated bundle until their schema and functions deploy. */
+export async function loadCachedSites(accessToken: string) {
+  try {
+    const rows = await getConvexClient(accessToken).query(api.cachedSites.list, {});
+    return rows.length === 0 && canUseBundledCatalog(process.env) ? listCachedSites() : rows;
+  } catch (error) {
+    if (canUseBundledCatalog(process.env, error)) return listCachedSites();
+    throw error;
+  }
+}
+
+export async function loadCachedSite(slug: string, accessToken: string) {
+  try {
+    const site = await getConvexClient(accessToken).query(api.cachedSites.get, { slug });
+    return !site && canUseBundledCatalog(process.env) ? getCachedSite(slug) : site;
+  } catch (error) {
+    if (canUseBundledCatalog(process.env, error)) return getCachedSite(slug);
+    throw error;
+  }
 }

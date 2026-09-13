@@ -57,4 +57,15 @@ Final automated suite: 264 passed, 39 build-dependent SEO tests skipped, zero fa
 
 Native Chromium verification covered all 12 cards and exact downloaded document contents, Overview widths 320/390/768/1440, mobile document layout, cached lookup by pressing Enter without keys, prefilled refresh with submission disabled when keys are missing, and unknown-site handling. No extraction HTTP requests, private runs or stored provider keys were created during the cache browsing check. The temporary WorkOS test account was deleted afterward. Browser artifacts are in `getdesign-runs/cached-sites-browser/`.
 
-This library ships with the dashboard and needs no new Convex schema. It does not remove the existing launch requirements for human palette review and deployment of the Convex ownership fix.
+The library now reads the shared Convex `cachedSites` table in production. Its seed data is committed in `convex/seedData/cached-sites.json`, and the Vercel production build deploys Convex and runs the internal seed before publication. This does not remove the existing launch requirement for human palette review.
+
+
+## Shared database and production seed follow-up
+
+The 12 snapshots belong to the application catalog, not to any user. Authenticated catalog queries return the same documents for unrelated accounts without looking up provider credentials or private run data. Only the internal `cachedSites:seed` mutation writes the catalog. It upserts by indexed slug, performs no writes for identical data, updates older snapshots, preserves newer database versions and extra catalog entries, and never touches user tables.
+
+The dashboard's Vercel build configuration now runs `scripts/build-dashboard.ts`. Production requires a production deploy key, builds against that deployment's URL, deploys the Convex schema/functions, and runs the seed using the same key. Any failure stops publication. Isolated previews use a project Preview Deploy Key and the CLI preview seed hook. Local/preview builds without upgraded backend functions can use the committed bundle; production cannot use that fallback.
+
+Verification: 275 automated tests passed, with 39 previously verified SEO cases skipped. New tests cover two account identities sharing all 12 documents, anonymous rejection, internal-only seeding, duplicate-free redeployment, snapshot updates, protection of newer/extra data, production key validation, correct seed order, and failure propagation. The deployment key validation tests passed again after tightening preview-key shape checks. Dashboard production build/TypeScript and targeted lint passed. Native Chromium rechecked all 12 downloads and cache navigation against the current local/preview compatibility path, with no page errors or paid requests; its temporary user was deleted.
+
+No live production database was deployed or seeded in this follow-up. The workspace has no Convex deployment configuration/deploy key for executing the production hook; the registered backend handlers and deployment orchestration were tested locally. Production seeding will execute during the configured Vercel production build.

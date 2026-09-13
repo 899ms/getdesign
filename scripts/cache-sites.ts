@@ -8,7 +8,7 @@ import { mkdir, writeFile, rename } from "node:fs/promises";
 import { resolve } from "node:path";
 import { runDesign } from "../packages/agent/src/runDesign";
 import { checkPaletteGrounding, joinStylesheetCss } from "./brand-smoke/grounding";
-import { cachedSiteSchema, type CachedSite } from "../apps/dashboard/lib/cached-site-schema";
+import { cachedSiteSchema, type CachedSite } from "../convex/lib/cachedSiteSchema";
 
 const targets = [
   ["linear", "Linear", "https://linear.app"],
@@ -67,7 +67,7 @@ await Promise.all(Array.from({ length: 3 }, async () => {
 await writeFile(resolve(out, "summary.json"), JSON.stringify({ startedAt, completedAt: new Date().toISOString(), concurrency: 3, passed: snapshots.map(s => s.slug), failures }, null, 2) + "\n");
 if (snapshots.length < 10) throw new Error(`Only ${snapshots.length} sites passed; existing catalog unchanged. Results: ${out}`);
 snapshots.sort((a, b) => a.title.localeCompare(b.title));
-const destination = resolve("apps/dashboard/data/cached-sites.json");
+const destination = resolve("convex/seedData/cached-sites.json");
 await writeFile(`${destination}.tmp`, JSON.stringify(snapshots, null, 2) + "\n");
 await rename(`${destination}.tmp`, destination);
 console.log(`Catalog updated: ${snapshots.length} sites. Results: ${out}`);

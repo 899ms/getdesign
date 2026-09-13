@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as cachedSites from "../cachedSites.js";
 import type * as designRunArtifacts from "../designRunArtifacts.js";
 import type * as designRunPolicy from "../designRunPolicy.js";
 import type * as designRuns from "../designRuns.js";
@@ -22,6 +23,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  cachedSites: typeof cachedSites;
   designRunArtifacts: typeof designRunArtifacts;
   designRunPolicy: typeof designRunPolicy;
   designRuns: typeof designRuns;

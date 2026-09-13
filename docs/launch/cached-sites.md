@@ -1,12 +1,26 @@
 # Cached site library
 
-Overview includes a shared library of public-site design snapshots. Each card links to a saved document, includes its capture date and palette, and offers a `design.md` download. Viewing and downloading use no provider credits and require no saved provider keys. Dashboard sign-in is still required.
+Every signed-in dashboard user can browse and download the same 12 public-site snapshots. They live in the shared Convex `cachedSites` table, with no owner/user ID. Provider keys are not required to read them. Public catalog queries require authentication and return only the curated documents and display metadata. Users cannot modify the catalog: seeding is an internal mutation, callable by deployment tooling rather than browser clients.
 
-Entering an exact cached page URL in Agent opens that snapshot. A fragment or omitted root slash does not change the page; a different path, query string or scheme requires a separate extraction. The **Refresh site** link prefills Agent and explicitly starts a new private run with the user's provider keys when submitted. It does not overwrite the shared snapshot or publish the user's run.
+Private extraction history remains in the separate, owner-scoped `designRuns` and `designRunArtifacts` tables. **Refresh site** prefills Agent and creates a new private extraction using the requesting user's keys when submitted. It does not publish that run or overwrite the shared catalog.
 
-The catalog is versioned in `apps/dashboard/data/cached-sites.json` and bundled with the dashboard. It contains only curated public-site output, never account IDs, private run data or provider credentials. The existing Convex run tables and ownership rules remain responsible for private runs. Shared snapshots are not automatically refreshed or presented as live site data.
+## Production deployment
 
-## Refresh the library
+The dashboard's checked-in `vercel.json` runs `bun run build:dashboard:vercel` from the repository root. `scripts/build-dashboard.ts` performs these steps in order:
+
+1. Require a production `CONVEX_DEPLOY_KEY` in the Vercel Production environment. A missing, preview or development key stops the build before deployment.
+2. Run `convex deploy` with the dashboard build command and `--cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL`. This connects the built frontend to the deployment selected by that key and deploys the backend/schema.
+3. Run the internal `cachedSites:seed` mutation using the same deployment key. A seed failure fails the Vercel build, preventing publication of the frontend.
+
+Configure `CONVEX_DEPLOY_KEY` with permission to deploy and execute the internal seed function. Keep `WORKOS_CLIENT_ID` configured in both Convex and the dashboard, along with the existing dashboard WorkOS and encryption settings. The deployment key is server-only and is never passed to browser code.
+
+The seed source is `convex/seedData/cached-sites.json`. A seed transaction inserts missing slugs, updates older or changed snapshots, and leaves identical or newer database snapshots untouched. Repeated deployments create no duplicate rows. It never deletes extra catalog entries or touches private runs, credentials or users. No model calls or new captures occur during deployment.
+
+Vercel previews with a Preview Deploy Key deploy an isolated backend and use `--preview-run cachedSites:seed`. Preview builds reject production/development deploy keys. Local builds and previews without a deploy key do not mutate a backend; they can still display the committed bundle if the cached-site functions are not deployed or the catalog is empty. Authentication and network errors are not hidden by this fallback. Production always reads the database and never falls back to the bundle.
+
+Convex's [Vercel deployment guide](https://docs.convex.dev/production/hosting/vercel) documents deployment URL injection and preview seeding. `--preview-run` does not seed production, which is why our production hook explicitly runs the seed after deployment.
+
+## Refresh the source snapshots
 
 From the repository root, with the approved local environment file:
 
@@ -14,6 +28,6 @@ From the repository root, with the approved local environment file:
 bun --env-file=apps/dashboard/.env.local scripts/cache-sites.ts
 ```
 
-This runs three visual extractions concurrently across 12 public sites. It uses the configured Daytona and OpenAI keys and incurs provider usage. Only completed visual runs whose palettes are grounded in the crawled CSS enter the catalog. A secret-value check and strict metadata schema run before writing. The script replaces the catalog atomically only after at least ten sites pass; otherwise the previous catalog remains intact. Intermediate snapshots and the batch report stay in the ignored `getdesign-runs/cached-sites/` directory. Sandboxes follow the existing pipeline's cleanup lifecycle.
+This runs three visual extractions concurrently across 12 public sites using Daytona and OpenAI, incurring provider usage. Only completed visual results whose palettes are grounded in source CSS enter the seed catalog. A secret-value check and strict metadata schema run before writing. The script replaces the seed file atomically only after at least ten sites pass; otherwise the previous file remains intact. Intermediate snapshots and the batch report stay in ignored `getdesign-runs/cached-sites/`. Sandboxes follow the existing pipeline's cleanup lifecycle.
 
-Review the generated catalog diff, run the dashboard checks, and deploy the dashboard to publish a refreshed library. No Convex schema deployment is needed for this library. The separate PR 26 ownership fix still requires a coordinated Convex deployment before launch.
+Review the generated catalog diff and run the dashboard checks. The next production deployment upserts the new snapshots automatically. For a configured local development backend, `bun x convex dev --once` deploys the schema/functions and `bun x convex run cachedSites:seed` seeds it. Shared snapshots display their capture date and are not presented as live site data.

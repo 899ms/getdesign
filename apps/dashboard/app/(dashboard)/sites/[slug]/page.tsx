@@ -2,16 +2,16 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { DesignDocument } from "@/components/design-document";
-import { getCachedSite, formatCaptureDate } from "@/lib/cached-sites";
+import { loadCachedSite, formatCaptureDate } from "@/lib/cached-sites";
 import { ExportActions } from "../../runs/[slug]/export-actions";
 
 export default async function CachedSitePage({ params }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { user } = await withAuth();
-  if (!user) redirect("/sign-in");
+  const { user, accessToken } = await withAuth();
+  if (!user || !accessToken) redirect("/sign-in");
   const { slug } = await params;
-  const site = getCachedSite(slug);
+  const site = await loadCachedSite(slug, accessToken);
   if (!site) notFound();
 
   return (

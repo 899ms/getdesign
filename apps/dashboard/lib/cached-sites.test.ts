@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { getCachedSite, listCachedSites } from "./cached-sites";
+import { canUseBundledCatalog } from "./cached-site-fallback";
 import { findCachedSite } from "./cached-site-url";
 
 describe("Curated cached sites", () => {
@@ -31,4 +32,17 @@ describe("Curated cached sites", () => {
       expect(findCachedSite(url, sites)).toBeUndefined();
     }
   });
+});
+
+
+test("production never silently replaces database data with the bundled catalog", () => {
+  const missing = new Error("Could not find public function for 'cachedSites:list'");
+  for (const error of [undefined, missing, new Error("Unauthorized"), new Error("Network failure")]) {
+    expect(canUseBundledCatalog({ VERCEL_ENV: "production" }, error)).toBe(false);
+    expect(canUseBundledCatalog({ NODE_ENV: "production" }, error)).toBe(false);
+  }
+  expect(canUseBundledCatalog({ VERCEL_ENV: "preview", NODE_ENV: "production" }, missing)).toBe(true);
+  expect(canUseBundledCatalog({ NODE_ENV: "development" }, missing)).toBe(true);
+  expect(canUseBundledCatalog({ VERCEL_ENV: "preview" }, new Error("Unauthorized"))).toBe(false);
+  expect(canUseBundledCatalog({ VERCEL_ENV: "preview" }, new Error("Network failure"))).toBe(false);
 });
