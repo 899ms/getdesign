@@ -1,6 +1,11 @@
 import Link from "next/link";
 
 import { DeveloperSurfaces } from "@/app/(dashboard)/account/developer-surfaces";
+import {
+  SettingsGroup,
+  SettingsSection,
+  SettingsShell,
+} from "@/app/(dashboard)/account/settings-shell";
 import { AgentInputPlaceholder } from "@/components/agent-input-placeholder";
 import { BrandMark } from "@/components/brand-mark";
 import { buttonVariants } from "@/components/ui/button";
@@ -315,48 +320,58 @@ export function SiteDetailLoading() {
 
 export function ProviderKeysSkeleton() {
   return (
-    <section aria-busy="true" aria-label="Loading provider keys" className="rounded-xl border bg-card p-4">
-      <h2 className="text-sm font-medium">Provider keys</h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Dashboard runs use these keys. They are encrypted at rest and never
-        shown again after you save.
-      </p>
-      <div className="mt-4 flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <p className="text-xs text-muted-foreground">Daytona</p>
-          <Skeleton className="h-8 max-w-sm" />
+    <SettingsSection
+      id="provider-keys"
+      title="Provider keys"
+      description="Dashboard runs use these keys. They are encrypted at rest and never shown again after you save."
+    >
+      <SettingsGroup>
+        <div
+          aria-busy="true"
+          aria-label="Loading provider keys"
+          className="divide-y"
+        >
+          <div className="px-4 py-3">
+            <p className="text-sm font-medium">Daytona</p>
+            <Skeleton className="mt-2 h-7 max-w-sm" />
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-sm font-medium">OpenAI</p>
+            <Skeleton className="mt-2 h-7 max-w-sm" />
+          </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <p className="text-xs text-muted-foreground">OpenAI</p>
-          <Skeleton className="h-8 max-w-sm" />
-        </div>
-      </div>
-    </section>
+      </SettingsGroup>
+    </SettingsSection>
   );
 }
 
 export function WidgetFallback() {
   return (
-    <section aria-busy="true" aria-label="Loading" className="rounded-xl border bg-card p-4">
-      <div className="space-y-3">
+    <SettingsGroup>
+      <div aria-busy="true" aria-label="Loading" className="divide-y">
         {Array.from({ length: 5 }, (_, index) => (
-          <Skeleton key={index} className="h-9 w-full" />
+          <div key={index} className="px-4 py-3">
+            <Skeleton className="h-5 w-full" />
+          </div>
         ))}
       </div>
-    </section>
+    </SettingsGroup>
   );
 }
 
 export function AccountLoading() {
   return (
-    <>
-      <PageHeader title="Account" tall />
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <ProviderKeysSkeleton />
-        <DeveloperSurfaces />
+    <SettingsShell>
+      <ProviderKeysSkeleton />
+      <SettingsSection
+        id="account"
+        title="Account"
+        description="Name, email, and password for this dashboard login."
+      >
         <WidgetFallback />
-      </div>
-    </>
+      </SettingsSection>
+      <DeveloperSurfaces />
+    </SettingsShell>
   );
 }
 

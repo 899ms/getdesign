@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { SettingsGroup, SettingsSection } from "./settings-shell";
+
 export type ProviderKeyMeta = {
   provider: "daytona" | "openai";
   keySuffix: string;
@@ -44,44 +46,38 @@ export function ProviderKeysCard({
   ).map((provider) => provider.label);
 
   return (
-    <section
+    <SettingsSection
       id="provider-keys"
-      aria-labelledby="provider-keys-heading"
-      className="scroll-mt-4 rounded-xl border bg-card p-4"
+      title="Provider keys"
+      description="Dashboard runs use these keys. They are encrypted at rest and never shown again after you save."
     >
-      <h2 id="provider-keys-heading" className="text-sm font-medium">
-        Provider keys
-      </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Dashboard runs use these keys. They are encrypted at rest and never
-        shown again after you save.
-      </p>
-      <div className="mt-4 flex flex-col gap-4">
-        {PROVIDERS.map((provider) => (
-          <ProviderKeyRow
-            key={provider.id}
-            provider={provider}
-            stored={keys.find((entry) => entry.provider === provider.id)}
-          />
-        ))}
-      </div>
-      <div className="mt-4 flex flex-col items-start gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p role="status" className="text-xs text-muted-foreground">
-          {credentialsReady
-            ? "Both provider keys are saved. Continue to Agent and enter a public URL to extract a design system."
-            : `Save your ${missingProviders.join(" and ")} ${missingProviders.length === 1 ? "key" : "keys"} above, then return to Agent.`}
-        </p>
-        <Link
-          href="/agent"
-          className={buttonVariants({
-            variant: credentialsReady ? "default" : "outline",
-            size: "lg",
-          })}
-        >
-          {credentialsReady ? "Continue to Agent" : "Back to Agent"}
-        </Link>
-      </div>
-    </section>
+      <SettingsGroup>
+        <div className="divide-y">
+          {PROVIDERS.map((provider) => (
+            <ProviderKeyRow
+              key={provider.id}
+              provider={provider}
+              stored={keys.find((entry) => entry.provider === provider.id)}
+            />
+          ))}
+        </div>
+        <div className="flex flex-col items-start gap-3 border-t bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p role="status" className="text-xs text-muted-foreground">
+            {credentialsReady
+              ? "Both provider keys are saved. Continue to Agent and enter a public URL to extract a design system."
+              : `Save your ${missingProviders.join(" and ")} ${missingProviders.length === 1 ? "key" : "keys"} above, then return to Agent.`}
+          </p>
+          <Link
+            href="/agent"
+            className={buttonVariants({
+              variant: credentialsReady ? "default" : "outline",
+            })}
+          >
+            {credentialsReady ? "Continue to Agent" : "Back to Agent"}
+          </Link>
+        </div>
+      </SettingsGroup>
+    </SettingsSection>
   );
 }
 
@@ -175,76 +171,72 @@ function ProviderKeyRow({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="px-4 py-3">
       {showForm ? (
-        <label
-          htmlFor={`${provider.id}-key`}
-          className="text-xs text-muted-foreground"
-        >
-          {provider.label}
-        </label>
-      ) : (
-        <p className="text-xs text-muted-foreground">{provider.label}</p>
-      )}
-      {showForm ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (pending === null && draft.trim()) void save();
-          }}
-          className="flex flex-wrap items-center gap-2"
-        >
-          <Input
-            id={`${provider.id}-key`}
-            aria-label={`${provider.label} API key`}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? `${provider.id}-key-error` : undefined}
-            type="password"
-            autoComplete="off"
-            spellCheck={false}
-            value={draft}
-            placeholder={provider.placeholder}
-            disabled={pending !== null}
-            onChange={(event: ChangeEvent<HTMLInputElement>) =>
-              setDraft(event.target.value)
-            }
-            className="max-w-sm"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={pending !== null || !draft.trim()}
-            aria-label={`Save ${provider.label} key`}
+        <>
+          <label htmlFor={`${provider.id}-key`} className="text-sm font-medium">
+            {provider.label}
+          </label>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (pending === null && draft.trim()) void save();
+            }}
+            className="mt-2 flex flex-wrap items-center gap-2"
           >
-            {pending === "save" ? "Saving" : "Save"}
-          </Button>
-          {current ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
+            <Input
+              id={`${provider.id}-key`}
+              aria-label={`${provider.label} API key`}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? `${provider.id}-key-error` : undefined}
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              value={draft}
+              placeholder={provider.placeholder}
               disabled={pending !== null}
-              onClick={() => {
-                setDraft("");
-                setReplacing(false);
-                setError(null);
-              }}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                setDraft(event.target.value)
+              }
+              className="min-w-0 flex-1 sm:max-w-sm"
+            />
+            <Button
+              type="submit"
+              disabled={pending !== null || !draft.trim()}
+              aria-label={`Save ${provider.label} key`}
             >
-              Cancel
+              {pending === "save" ? "Saving" : "Save"}
             </Button>
-          ) : null}
-        </form>
+            {current ? (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={pending !== null}
+                onClick={() => {
+                  setDraft("");
+                  setReplacing(false);
+                  setError(null);
+                }}
+              >
+                Cancel
+              </Button>
+            ) : null}
+          </form>
+        </>
       ) : (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="font-mono text-xs">••••{current.keySuffix}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Updated {formatUpdatedAt(current.updatedAt)}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">{provider.label}</p>
+            <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+              ••••{current.keySuffix}
+              <span className="font-sans">
+                {" "}
+                · Updated {formatUpdatedAt(current.updatedAt)}
+              </span>
             </p>
           </div>
           <div className="flex gap-1">
             <Button
-              size="sm"
               variant="outline"
               disabled={pending !== null}
               onClick={() => {
@@ -256,7 +248,6 @@ function ProviderKeyRow({
               Replace
             </Button>
             <Button
-              size="sm"
               variant="destructive"
               disabled={pending !== null}
               onClick={() => void remove()}
@@ -270,14 +261,16 @@ function ProviderKeyRow({
         <p
           id={`${provider.id}-key-error`}
           role="alert"
-          className="text-xs text-destructive"
+          className="mt-2 text-xs text-destructive"
         >
           {error}
         </p>
       ) : null}
-      <p role="status" className="text-xs text-muted-foreground">
-        {notice}
-      </p>
+      {notice ? (
+        <p role="status" className="mt-2 text-xs text-muted-foreground">
+          {notice}
+        </p>
+      ) : null}
     </div>
   );
 }

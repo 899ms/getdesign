@@ -1,4 +1,8 @@
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { docsUrl } from "@getdesign/content";
+
+import { SettingsGroup, SettingsSection } from "./settings-shell";
 
 const SURFACES = [
   {
@@ -25,36 +29,39 @@ const SURFACES = [
 
 export function DeveloperSurfaces() {
   return (
-    <section
-      aria-labelledby="developer-surfaces-heading"
-      className="rounded-xl border bg-card p-4"
+    <SettingsSection
+      id="developers"
+      title="Developers"
+      description="There is no getdesign API key. Dashboard runs use the keys above. Other surfaces take Daytona and OpenAI keys in the request or environment."
     >
-      <h2 id="developer-surfaces-heading" className="text-sm font-medium">
-        API, CLI, SDK, and Skills
-      </h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        There is no getdesign API key. Dashboard runs use the keys above. Other
-        surfaces take Daytona and OpenAI keys in the request or environment.
-      </p>
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-        {SURFACES.map((surface) => (
-          <li key={surface.href}>
-            <a
-              href={surface.href}
-              target="_blank"
-              rel="noreferrer"
-              className="block rounded-xl border px-4 py-3 transition-colors hover:bg-muted/40"
-            >
-              <p className="text-sm font-medium text-foreground">
-                {surface.title}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {surface.description}
-              </p>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
+      <SettingsGroup>
+        <ul className="divide-y">
+          {SURFACES.map((surface) => (
+            <li key={surface.href}>
+              <a
+                href={surface.href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/40"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {surface.title}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {surface.description}
+                  </p>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  strokeWidth={2}
+                  className="size-4 shrink-0 text-muted-foreground"
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </SettingsGroup>
+    </SettingsSection>
   );
 }

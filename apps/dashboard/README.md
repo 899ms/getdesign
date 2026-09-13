@@ -12,7 +12,7 @@ stored Daytona key and one stored OpenAI key per user.
 - Set `NEXT_PUBLIC_CONVEX_URL` for the dashboard deployment.
 
 Dashboard runs do not read `DAYTONA_API_KEY` or `OPENAI_API_KEY` from the host
-environment. Users save both keys on Account before starting a visual run.
+environment. Users save both keys in Settings before starting a visual run.
 
 ## Local checks
 

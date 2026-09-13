@@ -42,7 +42,7 @@ export async function resolveRunCredentials(
 export function requireDaytonaCredential(credentials: RunCredentials): string {
   if (!credentials.daytonaApiKey) {
     throw new Error(
-      "No Daytona API key stored. Add one on Account before capture can run.",
+      "No Daytona API key stored. Add one in Settings before capture can run.",
     );
   }
   return credentials.daytonaApiKey;
@@ -51,7 +51,7 @@ export function requireDaytonaCredential(credentials: RunCredentials): string {
 export function requireOpenAiCredential(credentials: RunCredentials): string {
   if (!credentials.openaiApiKey) {
     throw new Error(
-      "No OpenAI API key stored. Add one on Account before describe or synthesize can run.",
+      "No OpenAI API key stored. Add one in Settings before describe or synthesize can run.",
     );
   }
   return credentials.openaiApiKey;

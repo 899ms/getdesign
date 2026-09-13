@@ -1,7 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import Overview from "../../app/(dashboard)/page";
+import { DeveloperSurfaces } from "../../app/(dashboard)/account/developer-surfaces";
 import { ProviderKeysCard } from "../../app/(dashboard)/account/provider-keys-card";
+import {
+  SettingsSection,
+  SettingsShell,
+} from "../../app/(dashboard)/account/settings-shell";
 import Agent from "../../app/(dashboard)/agent/page";
 import Runs from "../../app/(dashboard)/runs/page";
 import { RunPageShell } from "../../app/(dashboard)/runs/[slug]/run-page-shell";
@@ -91,7 +96,7 @@ function App() {
       >
         <span>Local mocked fixture. No real accounts or provider calls.</span>
         <button onClick={() => navigate("/")}>Overview</button>
-        <button onClick={() => navigate("/account")}>Account</button>
+        <button onClick={() => navigate("/account")}>Settings</button>
         <button onClick={() => navigate("/agent")}>Agent</button>
         <button onClick={() => navigate("/runs")}>Runs</button>
         <button onClick={() => navigate("/sites")}>Examples</button>
@@ -124,9 +129,19 @@ function App() {
       </nav>
       <main>
         {path === "/account" ? (
-          <div className="p-4">
+          <SettingsShell>
             <ProviderKeysCard keys={fixture.keys} credentialsReady={ready} />
-          </div>
+            <SettingsSection
+              id="account"
+              title="Account"
+              description="Name, email, and password for this dashboard login."
+            >
+              <p className="rounded-xl border px-4 py-3 text-sm text-muted-foreground">
+                Profile editing is not in this fixture.
+              </p>
+            </SettingsSection>
+            <DeveloperSurfaces />
+          </SettingsShell>
         ) : path === "/agent" ? (
           agent
         ) : path === "/runs" ? (

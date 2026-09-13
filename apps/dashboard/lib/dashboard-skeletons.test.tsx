@@ -69,12 +69,14 @@ describe("dashboard loading skeletons", () => {
 
   test("account keeps settings copy and only pulses keys and the widget", () => {
     const account = renderToStaticMarkup(<AccountLoading />);
+    expect(account).toContain("Settings");
     expect(account).toContain("Account");
     expect(account).toContain("Provider keys");
     expect(account).toContain("Daytona");
     expect(account).toContain("OpenAI");
-    expect(account).toContain("API, CLI, SDK, and Skills");
+    expect(account).toContain("Developers");
     expect(account).toContain("data-slot=\"skeleton\"");
+    expect(account).toContain('id="account"');
 
     const team = renderToStaticMarkup(<TeamLoading />);
     expect(team).toContain("Team");
