@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 
 export type LightboxTile = {
   file: string;
+  label?: string;
   width: number;
   height: number;
   url?: string;

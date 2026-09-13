@@ -50,3 +50,11 @@ export function textOnlyResumePatch(run: TextOnlyResumeRun, now: number) {
     updatedAt: now,
   };
 }
+
+// Longer than the dashboard's 60-second request limit, with time for late writes.
+export const RUN_STALL_TIMEOUT_MS = 5 * 60_000;
+
+export function runRecoveryState(run: { steps: Record<string, string>; updatedAt: number }, now = Date.now()): "idle" | "active" | "stalled" {
+  if (!Object.values(run.steps).includes("running")) return "idle";
+  return now - run.updatedAt >= RUN_STALL_TIMEOUT_MS ? "stalled" : "active";
+}

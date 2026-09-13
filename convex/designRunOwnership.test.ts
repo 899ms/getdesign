@@ -19,7 +19,7 @@ const operations = [
 ] as const;
 
 function context(subject: string | null) {
-  const row = { _id: "run", userId: "owner", status: "queued", steps: {}, traceEvents: [] };
+  const row = { _id: "run", userId: "owner", status: "queued", updatedAt: 0, steps: {}, traceEvents: [] };
   const rows = {
     withIndex: () => rows,
     order: () => rows,
@@ -97,4 +97,16 @@ describe("run and artifact ownership", () => {
     })).rejects.toThrow("Run not found");
     expect(ctx.db.insert).not.toHaveBeenCalled();
   });
+});
+
+
+test("recovery rejects a live owned run before creating a second paid run", async () => {
+  const ctx = context("owner");
+  const original = await ctx.db.get();
+  original.status = "running";
+  original.steps = { capture: "running" };
+  original.updatedAt = Date.now();
+  await expect(invoke(runs.create, ctx, { userId: "owner", url: "https://example.com", rerunOf: "run" })).rejects.toThrow("still active");
+  expect(ctx.db.insert).not.toHaveBeenCalled();
+  expect(ctx.db.patch).not.toHaveBeenCalled();
 });

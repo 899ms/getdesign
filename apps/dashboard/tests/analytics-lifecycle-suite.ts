@@ -11,6 +11,7 @@ type Fixture = {
 };
 let run: Fixture;
 let failRender = false;
+let missingImages = false;
 let failFinalRead = false;
 let denyStepClaim = false;
 let savedMarkdown = false;
@@ -22,7 +23,7 @@ const query = mock(async (reference: Parameters<typeof getFunctionName>[0]) => {
       doc: {},
       crawl: { sourceUrl: "https://secret.test", stylesheets: [] },
     };
-  if (name === "designRunArtifacts:getTileUrls") return [{ url: "https://storage.test/tile.png" }];
+  if (name === "designRunArtifacts:getTileUrls") return missingImages ? [] : [{ url: "https://storage.test/tile.png" }];
   reads++;
   if (failFinalRead && reads > 1) throw new Error("read unavailable");
   return structuredClone(run);
@@ -37,6 +38,7 @@ const mutation = mock(
       if (denyStepClaim) return false;
       run.status = "running";
       run.startedAt ??= 123;
+      run.steps[args.step] = "running";
     }
     if (name === "designRunArtifacts:upsertValue" && args.kind === "markdown")
       savedMarkdown = true;
@@ -48,6 +50,7 @@ const mutation = mock(
     if (name === "designRuns:failStep") {
       run.status = "failed";
       run.error = { step: args.step, message: args.message };
+      run.steps[args.step] = "failed";
     }
     return null;
   },
@@ -94,6 +97,7 @@ beforeEach(() => {
     steps: { crawl: "ok", capture: "ok", extract: "ok", describe: "ok", synthesize: "ok", render: "pending" },
   };
   failRender = false;
+  missingImages = false;
   failFinalRead = false;
   denyStepClaim = false;
   savedMarkdown = false;
@@ -171,4 +175,19 @@ test("analytics-only read failures do not change completed runs into failed runs
   expect(response.status).toBe(200);
   expect(run.status).toBe("completed");
   expect(await response.json()).toEqual({ ok: true });
+});
+
+
+test("missing stored images fail render, release its claim, and retry without recapturing", async () => {
+  missingImages = true;
+  expect((await invoke()).status).toBe(500);
+  expect(run.steps.render).toBe("failed");
+  expect(run.steps.capture).toBe("ok");
+  expect(run.error?.step).toBe("render");
+  expect(savedMarkdown).toBe(false);
+  missingImages = false;
+  expect((await invoke()).status).toBe(200);
+  expect(run.steps.render).toBe("ok");
+  expect(run.status).toBe("completed");
+  expect(mutation.mock.calls.filter(([reference]) => getFunctionName(reference) === "designRuns:beginStep").map(([,args]) => args.step)).toEqual(["render", "render"]);
 });

@@ -96,3 +96,20 @@ test("deployment backfills image metadata on legacy text-and-palette seed rows",
   expect(await invoke(seed, { db })).toMatchObject({ updated: 1 });
   expect(rows[0]!.images).toEqual(snapshots[0]!.images);
 });
+
+
+test("legacy rows are withheld until the seed repairs the complete snapshot, even with a newer date", async () => {
+  const { db, rows } = database();
+  await invoke(seed, { db });
+  const damaged = rows[0]!;
+  delete (damaged as Partial<Row>).images;
+  damaged.capturedAt = "2099-01-01T00:00:00.000Z";
+  damaged.markdown = "Legacy document without image references";
+  const ctx = { db, auth: auth("user") };
+  expect(await invoke(list, ctx)).toHaveLength(11);
+  expect(await invoke(get, ctx, { slug: damaged.slug })).toBeNull();
+  expect(await invoke(seed, { db })).toMatchObject({ updated: 1 });
+  expect(damaged).toMatchObject(snapshots[0]!);
+  expect(await invoke(list, ctx)).toHaveLength(12);
+  expect(await invoke(get, ctx, { slug: damaged.slug })).toMatchObject(snapshots[0]!);
+});

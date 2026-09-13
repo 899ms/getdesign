@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { hasCachedSiteImages } from "@convex/lib/cachedSiteSchema";
 import { formatCaptureDate } from "@/lib/cached-sites";
 
 export function CachedSites({ sites }: { sites: import("@/lib/cached-site-schema").CachedSiteSummary[] }) {
+  sites = sites.filter(hasCachedSiteImages);
   if (sites.length === 0) return null;
 
   return (

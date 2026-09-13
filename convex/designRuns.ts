@@ -3,6 +3,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import {
+  runRecoveryState,
   textOnlyResumePatch,
   textOnlyResumeRejection,
 } from "./designRunPolicy";
@@ -82,8 +83,12 @@ export const create = mutation({
   returns: v.id("designRuns"),
   handler: async (ctx, args) => {
     const userId = await requireMatchingWorkOsUserId(ctx, args.userId);
-    if (args.rerunOf && !(await getOwnedRun(ctx, args.rerunOf, userId))) {
-      throw new ConvexError("Run not found.");
+    if (args.rerunOf) {
+      const original = await getOwnedRun(ctx, args.rerunOf, userId);
+      if (!original) throw new ConvexError("Run not found.");
+      if (runRecoveryState(original) === "active") {
+        throw new ConvexError({ code: "STEP_RUNNING", message: "The original run is still active. Wait for it to finish." });
+      }
     }
     let normalizedUrl: string;
     try {

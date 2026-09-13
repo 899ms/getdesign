@@ -3,7 +3,7 @@ import { internalMutation, query } from "./_generated/server";
 import { requireWorkOsUserId } from "./workosAuth";
 import { cachedSiteFields, cachedSiteSummaryFields } from "./lib/cachedSiteFields";
 import snapshots from "./seedData/cached-sites.json";
-import { cachedSiteSchema } from "./lib/cachedSiteSchema";
+import { cachedSiteSchema, hasCachedSiteImages } from "./lib/cachedSiteSchema";
 import type { Doc } from "./_generated/dataModel";
 
 function summary(site: Doc<"cachedSites">) {
@@ -21,7 +21,7 @@ export const list = query({
   handler: async ctx => {
     await requireWorkOsUserId(ctx);
     const sites = await ctx.db.query("cachedSites").collect();
-    return sites.sort((a, b) => a.title.localeCompare(b.title)).map(summary);
+    return sites.filter(hasCachedSiteImages).sort((a, b) => a.title.localeCompare(b.title)).map(summary);
   },
 });
 
@@ -31,7 +31,7 @@ export const get = query({
   handler: async (ctx, { slug }) => {
     await requireWorkOsUserId(ctx);
     const site = await ctx.db.query("cachedSites").withIndex("by_slug", q => q.eq("slug", slug)).unique();
-    return site ? { ...summary(site), markdown: site.markdown } : null;
+    return site && hasCachedSiteImages(site) ? { ...summary(site), markdown: site.markdown } : null;
   },
 });
 
@@ -50,7 +50,7 @@ export const seed = internalMutation({
       if (!existing) {
         await ctx.db.insert("cachedSites", { ...site, updatedAt: Date.now() });
         inserted++;
-      } else if (Date.parse(existing.capturedAt) > Date.parse(site.capturedAt) ||
+      } else if ((hasCachedSiteImages(existing) && Date.parse(existing.capturedAt) > Date.parse(site.capturedAt)) ||
         Object.entries(site).every(([key, value]) => JSON.stringify(existing[key as keyof typeof existing]) === JSON.stringify(value))) {
         unchanged++;
       } else {

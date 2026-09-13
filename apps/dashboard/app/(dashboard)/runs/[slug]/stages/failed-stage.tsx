@@ -10,6 +10,7 @@ export function FailedStage({
   isContinuing,
   showTextOnly,
   startNewRun = false,
+  waitingForStep = false,
 }: {
   error: string;
   onRetry: () => void;
@@ -18,8 +19,9 @@ export function FailedStage({
   isContinuing: boolean;
   showTextOnly: boolean;
   startNewRun?: boolean;
+  waitingForStep?: boolean;
 }) {
-  const isBusy = isRetrying || isContinuing;
+  const isBusy = isRetrying || isContinuing || waitingForStep;
   return (
     <div className="flex h-full w-full items-center justify-center bg-destructive/5 p-6">
       <div className="flex w-full max-w-md flex-col items-center gap-3 text-center">
@@ -42,6 +44,7 @@ export function FailedStage({
         </div>
         <p className="text-sm font-medium">Run failed</p>
         <p className="text-xs text-muted-foreground">{error}</p>
+        {waitingForStep ? <p className="text-xs text-muted-foreground">Another step is still running. Wait for it to finish before retrying.</p> : null}
         {startNewRun ? (
           <p className="text-xs text-muted-foreground">
             If this run stopped responding, start a new visual run. It will use

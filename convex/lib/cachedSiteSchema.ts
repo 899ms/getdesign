@@ -21,3 +21,8 @@ export const cachedSiteSchema = z.strictObject({
 });
 export type CachedSite = z.infer<typeof cachedSiteSchema>;
 export type CachedSiteSummary = Omit<CachedSite, "markdown">;
+
+/** Legacy rows may predate image metadata; they are not publishable snapshots. */
+export function hasCachedSiteImages(site: { images?: unknown }): boolean {
+  return cachedSiteSchema.shape.images.safeParse(site.images).success;
+}

@@ -90,7 +90,7 @@ export function runStepHandler(step: RunStep) {
     }
     const rejection = runStepRejection(run, step);
     if (rejection) {
-      return NextResponse.json({ error: rejection }, { status: 409 });
+      return NextResponse.json({ error: rejection, code: status === "running" ? "step_running" : "prerequisite_failed" }, { status: 409 });
     }
 
     const artifacts = await convex.query(api.designRunArtifacts.getForRun, {
@@ -110,7 +110,7 @@ export function runStepHandler(step: RunStep) {
       return NextResponse.json({ ok: true, analytics: persisted ? runReceipt(persisted, run.startedAt) : undefined });
     } catch (error) {
       if (error instanceof StepAlreadyStarted) {
-        return NextResponse.json({ error: error.message }, { status: 409 });
+        return NextResponse.json({ error: error.message, code: "step_running" }, { status: 409 });
       }
       await convex.mutation(api.designRuns.failStep, {
         id: runId,
@@ -343,7 +343,7 @@ async function runRenderStep({
   await beginStep(convex, runId, userId, "render", "Rendering markdown");
   const images = run.mode === "text_only" ? [] : await convex.query(api.designRunArtifacts.getTileUrls, { runId, userId });
   if (run.mode !== "text_only" && (!images.length || images.some(image => !image.url))) {
-    throw new StepError("capture", "Screenshots are required. Retry capture or explicitly choose text-only.");
+    throw new StepError("render", "Saved screenshots are unavailable. Retry rendering once the screenshots are accessible.");
   }
   const baseMarkdown = withDesignImages(renderDesignMd(doc), images.map((image, index) => ({ url: image.url!, alt: `Captured page tile ${index + 1}` })));
   const markdown =

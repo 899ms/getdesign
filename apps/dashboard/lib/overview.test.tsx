@@ -125,3 +125,14 @@ describe("Overview recent-run summary", () => {
     expect(html).not.toContain('href="/runs/run-24"');
   });
 });
+
+
+test("a legacy cached row cannot crash Overview or display an image-free card", async () => {
+  const { CachedSites } = await import("../components/cached-sites");
+  const site = listCachedSites()[0]!;
+  const broken = { ...site, slug: "legacy", images: [] };
+  const html = renderToStaticMarkup(<CachedSites sites={[broken, site]} />);
+  expect(html).toContain(`href="/sites/${site.slug}"`);
+  expect(html).not.toContain('href="/sites/legacy"');
+  expect(html).toContain("1 available");
+});

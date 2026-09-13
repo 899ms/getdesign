@@ -5,10 +5,10 @@ import {
   renderChildrenWithHexColors, renderTextWithHexColors,
 } from "@/components/design-md-hex";
 
-export function DesignDocument({ content }: { content: string }) {
+export function DesignDocument({ content, imagesInGallery = false }: { content: string; imagesInGallery?: boolean }) {
   return (
     <div className="flex min-w-0 flex-1 justify-center p-6">
-      <article className="mx-auto w-full min-w-0 max-w-3xl [overflow-wrap:anywhere]">
+      <article className={`mx-auto w-full min-w-0 max-w-3xl [overflow-wrap:anywhere] ${imagesInGallery ? "lg:[&_p:has(img)]:hidden" : ""}`}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{

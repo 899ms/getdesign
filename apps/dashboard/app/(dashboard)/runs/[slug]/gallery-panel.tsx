@@ -36,6 +36,16 @@ export function GalleryPanel({
   const tiles: LightboxTile[] =
     Array.isArray(live) && live.length > 0 ? live : initialTiles;
 
+  return <ScreenshotGallery runId={runId} tiles={tiles} totalExpected={totalExpected} highlightIndex={highlightIndex} />;
+}
+
+/** Shared preview panel for both live private runs and curated cached sites. */
+export function ScreenshotGallery({ runId, tiles, totalExpected, highlightIndex }: {
+  runId: string;
+  tiles: LightboxTile[];
+  totalExpected?: number;
+  highlightIndex?: number;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -72,6 +82,7 @@ export function GalleryPanel({
 
   return (
     <motion.aside
+      aria-label="Screenshot gallery"
       animate={{ width: collapsed ? COLLAPSED_WIDTH : OPEN_WIDTH }}
       initial={false}
       transition={{ type: "spring", stiffness: 220, damping: 28 }}
@@ -141,12 +152,12 @@ export function GalleryPanel({
                     ? "border-foreground/70 shadow-md ring-2 ring-foreground/30"
                     : "border-border/60 hover:shadow-md",
                 )}
-                title={`Tile ${index + 1}`}
+                title={tile.label ?? `Tile ${index + 1}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={tile.url}
-                  alt={`Screenshot ${index + 1}`}
+                  alt={tile.label ?? `Screenshot ${index + 1}`}
                   width={tile.width}
                   height={tile.height}
                   loading="lazy"

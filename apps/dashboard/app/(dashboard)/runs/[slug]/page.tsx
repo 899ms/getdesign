@@ -48,7 +48,7 @@ export default async function RunPage({
     : storedContent
 
   const markdownContent = content ? (
-    <DesignDocument content={content} />
+    <DesignDocument content={content} imagesInGallery />
   ) : null
 
   return (

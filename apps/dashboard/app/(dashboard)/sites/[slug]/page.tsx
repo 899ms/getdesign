@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { DesignDocument } from "@/components/design-document";
 import { loadCachedSite, formatCaptureDate } from "@/lib/cached-sites";
+import { ScreenshotGallery } from "../../runs/[slug]/gallery-panel";
 import { ExportActions } from "../../runs/[slug]/export-actions";
 
 export default async function CachedSitePage({ params }: {
@@ -15,7 +16,8 @@ export default async function CachedSitePage({ params }: {
   if (!site) notFound();
 
   return (
-    <>
+    <div className="flex min-h-svh flex-1 items-stretch">
+      <div className="flex min-w-0 flex-1 flex-col">
       <header className="flex min-h-14 flex-wrap items-center gap-3 border-b px-4 py-3">
         <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
           <Link href="/" className="text-muted-foreground hover:text-foreground">Overview</Link>
@@ -34,7 +36,9 @@ export default async function CachedSitePage({ params }: {
           <p className="mt-1 text-xs text-muted-foreground">Starts a new run with your provider keys.</p>
         </div>
       </div>
-      <DesignDocument content={site.markdown} />
-    </>
+      <DesignDocument content={site.markdown} imagesInGallery />
+      </div>
+      <ScreenshotGallery runId={`cached-${site.slug}`} tiles={site.images.map(image => ({ file: image.url, url: image.url, width: image.width, height: image.height, label: image.url.endsWith("-hero.webp") ? "Hero viewport" : "Full page" }))} totalExpected={site.images.length} />
+    </div>
   );
 }
