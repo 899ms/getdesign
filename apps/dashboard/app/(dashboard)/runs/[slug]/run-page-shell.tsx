@@ -76,14 +76,15 @@ export function RunPageShell({
               </BreadcrumbList>
             </Breadcrumb>
             {exportMarkdown ? (
-              <ExportActions
-                content={exportMarkdown}
-                siteName={siteName}
-              />
+              <div className="ml-auto flex items-center gap-2">
+                <ExportActions
+                  content={exportMarkdown}
+                  siteName={siteName}
+                />
+                <ShareRun runId={runId} isPublic={isPublic} />
+              </div>
             ) : null}
           </header>
-
-          {exportMarkdown ? <ShareRun runId={runId} isPublic={isPublic} /> : null}
 
           {markdownContent
             ? markdownContent

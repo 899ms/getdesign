@@ -3,9 +3,26 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  ArrowDown01Icon,
+  ArrowUpRight01Icon,
+  CircleLock01Icon,
+  Copy01Icon,
+  Globe02Icon,
+} from "@hugeicons/core-free-icons";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function ShareRun({ runId, isPublic }: { runId: string; isPublic: boolean }) {
   const setVisibility = useMutation(api.publicRuns.setVisibility);
@@ -14,12 +31,15 @@ export function ShareRun({ runId, isPublic }: { runId: string; isPublic: boolean
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const path = `/r/${encodeURIComponent(runId)}`;
+  const visibility = isPublic ? "public" : "private";
 
-  async function changeVisibility() {
+  async function changeVisibility(next: string) {
+    if (next !== "public" && next !== "private") return;
+    if (next === visibility) return;
     setBusy(true);
     setError(null);
     try {
-      await setVisibility({ id: runId as Id<"designRuns">, visibility: isPublic ? "private" : "public" });
+      await setVisibility({ id: runId as Id<"designRuns">, visibility: next });
       setCopied(false);
       router.refresh();
     } catch {
@@ -40,20 +60,54 @@ export function ShareRun({ runId, isPublic }: { runId: string; isPublic: boolean
   }
 
   return (
-    <section aria-label="Run sharing" className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/20 px-4 py-3">
-      <div className="text-xs text-muted-foreground">
-        <p>{isPublic ? "Public. Anyone with the link can view and download this design and its screenshots." : "Private. Publishing lets anyone view and download this design and its screenshots."}</p>
-        {error ? <p role="alert" className="mt-1 text-destructive">{error}</p> : null}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {isPublic ? <>
-          <a href={path} target="_blank" rel="noreferrer" className="text-xs underline underline-offset-4">Open public page</a>
-          <Button variant="outline" size="sm" onClick={() => void copyLink()}>{copied ? "Link copied" : "Copy link"}</Button>
-        </> : null}
-        <Button variant="outline" size="sm" disabled={busy} onClick={() => void changeVisibility()}>
-          {busy ? "Saving…" : isPublic ? "Make private" : "Publish run"}
-        </Button>
-      </div>
-    </section>
+    <>
+      {error ? <span role="alert" className="text-xs text-destructive">{error}</span> : null}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          disabled={busy}
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Visibility"
+            />
+          }
+        >
+          <HugeiconsIcon icon={isPublic ? Globe02Icon : CircleLock01Icon} />
+          {busy ? "Saving…" : isPublic ? "Public" : "Private"}
+          <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuRadioGroup
+            value={visibility}
+            onValueChange={(value) => void changeVisibility(value)}
+          >
+            <DropdownMenuRadioItem disabled={busy} value="private">
+              <HugeiconsIcon icon={CircleLock01Icon} />
+              Private
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem disabled={busy} value="public">
+              <HugeiconsIcon icon={Globe02Icon} />
+              Public
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+          {isPublic ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => void copyLink()}>
+                <HugeiconsIcon icon={Copy01Icon} />
+                {copied ? "Link copied" : "Copy link"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={<a href={path} target="_blank" rel="noreferrer" />}
+              >
+                <HugeiconsIcon icon={ArrowUpRight01Icon} />
+                Open public page
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }

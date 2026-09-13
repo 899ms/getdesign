@@ -1,5 +1,6 @@
 // Run through public-runs.test.ts to isolate Bun's module mocks.
 import { beforeEach, expect, mock, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { getFunctionName } from "convex/server";
 
@@ -102,13 +103,25 @@ test("public page renders the design and download links without owner-only contr
   expect(html).not.toContain("Make private");
 });
 
-test("owner controls explain publication and offer revocation and a copyable link", () => {
+test("owner controls are a public/private dropdown with a copyable link when published", () => {
   const privateHtml = renderToStaticMarkup(<ShareRun runId="run" isPublic={false} />);
-  expect(privateHtml).toContain("Publish run");
-  expect(privateHtml).toContain("anyone view and download");
-  expect(privateHtml).not.toContain("Copy link");
+  expect(privateHtml).toContain('aria-label="Visibility"');
+  expect(privateHtml).toContain('aria-haspopup="menu"');
+  expect(privateHtml).toContain("Private");
+  expect(privateHtml).not.toContain("anyone view and download");
   const publicHtml = renderToStaticMarkup(<ShareRun runId="run" isPublic />);
-  expect(publicHtml).toContain("Make private");
-  expect(publicHtml).toContain("Copy link");
-  expect(publicHtml).toContain('href="/r/run"');
+  expect(publicHtml).toContain("Public");
+  const share = readFileSync(
+    new URL("../app/(dashboard)/runs/[slug]/share-run.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(share).toContain('value="private"');
+  expect(share).toContain('value="public"');
+  expect(share).toContain("Copy link");
+  expect(share).toContain("href={path}");
+  const shell = readFileSync(
+    new URL("../app/(dashboard)/runs/[slug]/run-page-shell.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(shell.indexOf("<ExportActions")).toBeLessThan(shell.indexOf("<ShareRun"));
 });

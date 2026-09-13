@@ -85,7 +85,7 @@ export function ExportActions({
   }
 
   return (
-    <div className="ml-auto flex items-center gap-2">
+    <div className="flex items-center gap-2">
       {error ? <span role="alert" className="text-xs text-destructive">{error}</span> : null}
       {copied ? <span className="text-xs text-muted-foreground">Copied</span> : null}
       <DropdownMenu>

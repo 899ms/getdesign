@@ -1,6 +1,6 @@
 # Public run sharing
 
-On a completed run at `/runs/[id]`, choose **Publish run**, then **Copy link**.
+On a completed run at `/runs/[id]`, choose **Public** in the visibility menu next to Download, then **Copy link**.
 Runs are private until their owner publishes them. Existing runs need no migration.
 
 The public link is `/r/[id]`. Anyone can open it without an account or provider keys,
@@ -45,7 +45,7 @@ run with a saved Markdown document. The public response omits owner identity,
 credentials, raw crawl data, traces, errors, and storage IDs. Private run mutations
 and artifact queries keep their existing owner checks.
 
-**Make private** or deleting the run returns 404 on subsequent public page,
+Choosing **Private** or deleting the run returns 404 on subsequent public page,
 Markdown, JSON, and screenshot requests. Invalid IDs also return 404. Downloads
 use `Cache-Control: no-store`; screenshot routes return bytes rather than permanent
 storage links. Copies already downloaded by recipients cannot be recalled.
