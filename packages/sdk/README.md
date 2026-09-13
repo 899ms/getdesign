@@ -48,3 +48,23 @@ for await (const event of streamDesign("https://linear.app", {
 ```
 
 MIT © getdesign
+
+## Save the document and its images
+
+Visual results include actual hero and full-page captures in `images`. Each entry contains `path`, `alt`, `mimeType`, `imageBase64`, `width`, and `height`. Markdown references those relative paths. Save both the document and its files:
+
+```ts
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+
+const output = "./design-output";
+await mkdir(output, { recursive: true });
+for (const image of system.images) {
+  const path = join(output, image.path);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, Buffer.from(image.imageBase64, "base64"));
+}
+await writeFile(join(output, "design.md"), system.markdown);
+```
+
+`streamDesign` includes the same files in its final `result`; progress events remain small and contain no image bytes. Normal runs fail if capture is unavailable, including when no Daytona key is configured. Only an explicit `visualRequirement: "text_only_fallback"` skips images and returns `mode: "text_only"` with an empty `images` array.

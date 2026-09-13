@@ -1,6 +1,18 @@
 import { ConvexError, v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import {
+  runRecoveryState,
+  textOnlyResumePatch,
+  textOnlyResumeRejection,
+} from "./designRunPolicy";
+import {
+  listRecentPreviewsForUser,
+  loadArtifactsForRun,
+  loadTileUrlsForRun,
+} from "./lib/runPreviews";
+import { requireMatchingWorkOsUserId, requireWorkOsUserId } from "./workosAuth";
 
 const stepSchema = v.union(
   v.literal("crawl"),
@@ -58,7 +70,8 @@ function initialSteps() {
   };
 }
 
-async function getOwnedRun(ctx: { db: any }, id: any, userId: string) {
+async function getOwnedRun(ctx: QueryCtx, id: Id<"designRuns">, userId: string) {
+  await requireMatchingWorkOsUserId(ctx, userId);
   const run = await ctx.db.get(id);
   if (!run || run.userId !== userId || run.deletedAt) return null;
   return run;
@@ -74,6 +87,14 @@ export const create = mutation({
   },
   returns: v.id("designRuns"),
   handler: async (ctx, args) => {
+    const userId = await requireMatchingWorkOsUserId(ctx, args.userId);
+    if (args.rerunOf) {
+      const original = await getOwnedRun(ctx, args.rerunOf, userId);
+      if (!original) throw new ConvexError("Run not found.");
+      if (runRecoveryState(original) === "active") {
+        throw new ConvexError({ code: "STEP_RUNNING", message: "The original run is still active. Wait for it to finish." });
+      }
+    }
     let normalizedUrl: string;
     try {
       normalizedUrl = normalizeUrl(args.url);
@@ -88,7 +109,7 @@ export const create = mutation({
     const now = Date.now();
 
     return await ctx.db.insert("designRuns", {
-      userId: args.userId,
+      userId,
       userEmail: args.userEmail,
       url: normalizedUrl,
       normalizedUrl,
@@ -130,6 +151,7 @@ export const listRecent = query({
   },
   returns: v.array(v.any()),
   handler: async (ctx, { userId, limit = 24 }) => {
+    await requireMatchingWorkOsUserId(ctx, userId);
     const rows = await ctx.db
       .query("designRuns")
       .withIndex("by_user_updated", (q) => q.eq("userId", userId))
@@ -137,6 +159,104 @@ export const listRecent = query({
       .take(limit);
 
     return rows.filter((run) => !run.deletedAt);
+  },
+});
+
+const runPreviewValidator = v.object({
+  slug: v.string(),
+  domain: v.string(),
+  status: runStatusSchema,
+  title: v.string(),
+  theme: v.string(),
+  accent: v.string(),
+  image: v.union(v.string(), v.null()),
+  textOnly: v.boolean(),
+  visibility: v.union(v.literal("private"), v.literal("public")),
+});
+
+const MAX_RECENT_PREVIEW_LIMIT = 48;
+
+export const listRecentPreviews = query({
+  args: {
+    userId: v.string(),
+    limit: v.optional(v.number()),
+    requireDesignFile: v.optional(v.boolean()),
+    displayLimit: v.optional(v.number()),
+  },
+  returns: v.array(runPreviewValidator),
+  handler: async (ctx, args) => {
+    const userId = await requireMatchingWorkOsUserId(ctx, args.userId);
+    const limit = Math.min(
+      Math.max(args.limit ?? 24, 1),
+      MAX_RECENT_PREVIEW_LIMIT,
+    );
+    return await listRecentPreviewsForUser(ctx, userId, {
+      limit,
+      requireDesignFile: args.requireDesignFile ?? false,
+      displayLimit: args.displayLimit,
+    });
+  },
+});
+
+const tileUrlValidator = v.object({
+  file: v.string(),
+  width: v.number(),
+  height: v.number(),
+  url: v.string(),
+});
+
+export const getPage = query({
+  args: {
+    id: v.id("designRuns"),
+    userId: v.string(),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      run: v.any(),
+      artifacts: v.any(),
+      tiles: v.array(tileUrlValidator),
+    }),
+  ),
+  handler: async (ctx, { id, userId }) => {
+    const run = await getOwnedRun(ctx, id, userId);
+    if (!run) return null;
+    const [artifacts, tiles] = await Promise.all([
+      loadArtifactsForRun(ctx, run._id),
+      loadTileUrlsForRun(ctx, run._id),
+    ]);
+    return { run, artifacts, tiles };
+  },
+});
+
+const RUN_SUMMARY_CAP = 500;
+
+export const summarizeForUser = query({
+  args: {
+    userId: v.string(),
+  },
+  returns: v.object({
+    total: v.number(),
+    completed: v.number(),
+    failed: v.number(),
+    active: v.number(),
+  }),
+  handler: async (ctx, { userId }) => {
+    await requireMatchingWorkOsUserId(ctx, userId);
+    const rows = await ctx.db
+      .query("designRuns")
+      .withIndex("by_user_updated", (q) => q.eq("userId", userId))
+      .take(RUN_SUMMARY_CAP);
+    const live = rows.filter((run) => !run.deletedAt);
+    let completed = 0;
+    let failed = 0;
+    let active = 0;
+    for (const run of live) {
+      if (run.status === "completed") completed += 1;
+      else if (run.status === "failed") failed += 1;
+      else if (run.status === "queued" || run.status === "running") active += 1;
+    }
+    return { total: live.length, completed, failed, active };
   },
 });
 
@@ -161,10 +281,12 @@ export const beginStep = mutation({
     step: stepSchema,
     message: v.string(),
   },
-  returns: v.null(),
+  returns: v.boolean(),
   handler: async (ctx, args) => {
     const run = await getOwnedRun(ctx, args.id, args.userId);
     if (!run) throw new ConvexError("Run not found.");
+    const status = run.steps[args.step];
+    if (status === "running" || status === "ok" || status === "skipped") return false;
     const now = Date.now();
 
     await ctx.db.patch(args.id, {
@@ -180,7 +302,7 @@ export const beginStep = mutation({
       startedAt: run.startedAt ?? now,
       updatedAt: now,
     });
-    return null;
+    return true;
   },
 });
 
@@ -216,7 +338,12 @@ export const finishStep = mutation({
       steps: { ...run.steps, [args.step]: args.status },
       traceEvents: [
         ...(run.traceEvents ?? []),
-        { step: args.step, status: args.status, message: args.message, at: now },
+        {
+          step: args.step,
+          status: args.status,
+          message: args.message,
+          at: now,
+        },
       ],
       updatedAt: now,
     });
@@ -256,5 +383,23 @@ export const failStep = mutation({
       updatedAt: now,
     });
     return null;
+  },
+});
+
+export const resumeTextOnly = mutation({
+  args: {
+    id: v.id("designRuns"),
+  },
+  returns: v.object({ ok: v.literal(true) }),
+  handler: async (ctx, args) => {
+    const userId = await requireWorkOsUserId(ctx);
+    const run = await getOwnedRun(ctx, args.id, userId);
+    if (!run) throw new ConvexError("Run not found.");
+    const rejection = textOnlyResumeRejection(run);
+    if (rejection) throw new ConvexError(rejection);
+
+    const now = Date.now();
+    await ctx.db.patch(args.id, textOnlyResumePatch(run, now));
+    return { ok: true as const };
   },
 });

@@ -12,6 +12,7 @@ title: "@getdesign/sdk"
 ## Type Aliases
 
 - [DesignDoc](/reference/sdk/type-aliases/designdoc/)
+- [DesignImage](/reference/sdk/type-aliases/designimage/)
 - [DesignProgressEvent](/reference/sdk/type-aliases/designprogressevent/)
 - [DesignStreamEvent](/reference/sdk/type-aliases/designstreamevent/)
 - [DesignTokens](/reference/sdk/type-aliases/designtokens/)

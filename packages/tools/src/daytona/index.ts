@@ -21,6 +21,8 @@ export {
   measurePageHeight,
   waitForReadyState,
 } from "./measurement.js";
+
+export { CaptureReadinessError, waitForCaptureReadiness } from "./readiness.js";
 export type {
   MeasurementMode,
   MeasurementResult,
@@ -66,3 +68,5 @@ export type {
   ScreenshotArtifact,
   Viewport,
 } from "./types.js";
+
+export { exportScreenshot } from "./export-image.js";

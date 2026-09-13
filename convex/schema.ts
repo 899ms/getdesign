@@ -1,7 +1,9 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { cachedSiteFields } from "./lib/cachedSiteFields";
 
 export default defineSchema({
+  cachedSites: defineTable({ ...cachedSiteFields, images: v.optional(cachedSiteFields.images), updatedAt: v.number() }).index("by_slug", ["slug"]),
   waitlist: defineTable({
     email: v.string(),
     source: v.optional(v.string()),
@@ -12,6 +14,8 @@ export default defineSchema({
   })
     .index("by_email", ["email"]),
   designRuns: defineTable({
+    visibility: v.optional(v.union(v.literal("private"), v.literal("public"))),
+    publishedAt: v.optional(v.number()),
     userId: v.string(),
     userEmail: v.optional(v.string()),
     url: v.string(),
@@ -119,4 +123,12 @@ export default defineSchema({
   })
     .index("by_run", ["runId"])
     .index("by_run_kind", ["runId", "kind"]),
+  userCredentials: defineTable({
+    userId: v.string(),
+    provider: v.union(v.literal("daytona"), v.literal("openai")),
+    ciphertext: v.string(),
+    iv: v.string(),
+    keySuffix: v.string(),
+    updatedAt: v.number(),
+  }).index("by_user_and_provider", ["userId", "provider"]),
 });

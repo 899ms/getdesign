@@ -118,7 +118,7 @@ test("runDesign end-to-end with stubbed fetch and mocked LLM (text-only)", async
 
   const result = await runDesign("https://example.com", {
     model: mockModel,
-    visualRequirement: "skip_silently",
+    visualRequirement: "text_only_fallback",
     onPhase: (event) => {
       if ("status" in event && event.status === "ok") {
         completedPhases.push(event.phase);
@@ -135,6 +135,28 @@ test("runDesign end-to-end with stubbed fetch and mocked LLM (text-only)", async
   expect(result.tokens.typography.fontFamilies.length).toBeGreaterThan(0);
   expect(result.markdown).toContain("# Acme Design System");
   expect(result.markdown).toContain("## 1. Visual Theme & Atmosphere");
+});
+
+test("explicit text-only mode skips capture even when Daytona is configured", async () => {
+  process.env.DAYTONA_API_KEY = "dtn_should_not_be_used";
+  const captureEvents: string[] = [];
+
+  const result = await runDesign("https://example.com", {
+    model: makeMockModel(),
+    visualRequirement: "text_only_fallback",
+    onPhase: (event) => {
+      if (event.phase === "capture") captureEvents.push(event.event.phase);
+    },
+  });
+
+  expect(captureEvents).toEqual([]);
+  expect(result.visual).toEqual({
+    status: "skipped",
+    reason: "Text-only mode was explicitly requested.",
+  });
+  expect(result.mode).toBe("text_only");
+  expect(result.tiles).toBe(0);
+  expect(result.markdown).toStartWith("> **Note:** This design.md was produced in text-only mode.");
 });
 
 test("synthesizer caps tiles at MAX_SYNTHESIS_TILES and notes the omission", async () => {
@@ -186,4 +208,9 @@ test("synthesizer caps tiles at MAX_SYNTHESIS_TILES and notes the omission", asy
   expect(calls.length).toBe(1);
   expect(calls[0]!.tileImageCount).toBe(MAX_SYNTHESIS_TILES);
   expect(calls[0]!.userText).toContain(`tiles ${MAX_SYNTHESIS_TILES + 1}..15 omitted`);
+});
+
+
+test("default visual extraction fails when screenshots are unavailable", async () => {
+  await expect(runDesign("https://example.com", { model: makeMockModel() })).rejects.toMatchObject({ code: "capture_failed" });
 });

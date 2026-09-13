@@ -22,6 +22,7 @@ export function WorkOsWidgetsProvider({
         appearance: mounted && resolvedTheme === "dark" ? "dark" : "light",
         accentColor: "gray",
         radius: "medium",
+        hasBackground: false,
       }}
     >
       {children}

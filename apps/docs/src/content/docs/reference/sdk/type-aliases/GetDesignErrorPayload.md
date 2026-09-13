@@ -7,7 +7,7 @@ title: "GetDesignErrorPayload"
 
 > **GetDesignErrorPayload** = `object`
 
-Defined in: [packages/sdk/src/index.ts:71](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L71)
+Defined in: [packages/sdk/src/index.ts:76](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L76)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/sdk/src/index.ts:71](https://github.com/MohtashamMurshid/g
 
 > `optional` **code?**: `string`
 
-Defined in: [packages/sdk/src/index.ts:73](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L73)
+Defined in: [packages/sdk/src/index.ts:78](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L78)
 
 ***
 
@@ -23,7 +23,7 @@ Defined in: [packages/sdk/src/index.ts:73](https://github.com/MohtashamMurshid/g
 
 > **error**: `string`
 
-Defined in: [packages/sdk/src/index.ts:72](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L72)
+Defined in: [packages/sdk/src/index.ts:77](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L77)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [packages/sdk/src/index.ts:72](https://github.com/MohtashamMurshid/g
 
 > `optional` **reason?**: `string`
 
-Defined in: [packages/sdk/src/index.ts:74](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L74)
+Defined in: [packages/sdk/src/index.ts:79](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L79)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [packages/sdk/src/index.ts:74](https://github.com/MohtashamMurshid/g
 
 > `optional` **retryWith?**: `object`
 
-Defined in: [packages/sdk/src/index.ts:75](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L75)
+Defined in: [packages/sdk/src/index.ts:80](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L80)
 
 #### header
 

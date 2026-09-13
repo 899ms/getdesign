@@ -9,3 +9,5 @@ Terms and naming for the CLI workspace (`packages/cli`). Expand as the domain st
 - **Progress display** — `ProgressDisplay` + `summarizeDesignEvent` own timed stderr lines and the optional TTY spinner; callers pass `onPhase` only.
 - **Output path** — Pure helpers for URL normalization and deterministic `./getdesign-runs/<slug>/design.md` resolution; **interface** is narrow so behavior stays in one place.
 - **Parse args** — `parseArgs` / `usage` only; no I/O.
+
+- **Image directory** — A sibling `<document-name>.images/` directory containing hero and full-page captures referenced by the generated Markdown. Move it with the document.

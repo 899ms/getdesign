@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 
-const DEFAULT_MODEL_ID = "gpt-5.3-codex";
+const DEFAULT_MODEL_ID = "gpt-5.6-terra";
 
 export type ResolveModelOptions = {
   modelId?: string;
@@ -10,9 +10,9 @@ export type ResolveModelOptions = {
 };
 
 /**
- * Resolve the LLM used by the Synthesizer. The default is `gpt-5.3-codex` via
+ * Resolve the LLM used by the Synthesizer. The default is `gpt-5.6-terra` via
  * the OpenAI provider; override via `GETDESIGN_MODEL` or by passing a modelId.
- * The model id is treated as a bare provider model id (e.g. `gpt-5.3-codex`),
+ * The model id is treated as a bare provider model id (e.g. `gpt-5.6-terra`),
  * not a gateway-qualified id (no `openai/` prefix).
  */
 export function resolveModel(options: ResolveModelOptions = {}): LanguageModel {

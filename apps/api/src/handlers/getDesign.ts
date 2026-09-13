@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import {
   RunDesignError,
+  embedDesignImages,
   type RunDesignEvent,
   type RunDesignOptions,
   type RunDesignResult,
@@ -25,8 +26,12 @@ const SITE_NAME_HEADER = "x-getdesign-site-name";
 
 type ResponseFormat = "markdown" | "json";
 
-function parseVisualRequirement(c: Context): RunDesignOptions["visualRequirement"] {
-  const requestedMode = (c.req.header(TEXT_ONLY_HEADER) ?? "").trim().toLowerCase();
+function parseVisualRequirement(
+  c: Context,
+): RunDesignOptions["visualRequirement"] {
+  const requestedMode = (c.req.header(TEXT_ONLY_HEADER) ?? "")
+    .trim()
+    .toLowerCase();
   return requestedMode === "text_only" ? "text_only_fallback" : "require";
 }
 
@@ -41,6 +46,46 @@ function parseSiteName(c: Context): string | undefined {
   return c.req.query("siteName") ?? c.req.header(SITE_NAME_HEADER) ?? undefined;
 }
 
+function headerValue(c: Context, name: string): string {
+  return (c.req.header(name) ?? "").trim();
+}
+
+function credentialsMissingReason(c: Context): string | null {
+  const textOnly = parseVisualRequirement(c) === "text_only_fallback";
+  const daytona = headerValue(c, DAYTONA_HEADER);
+  const openai = headerValue(c, OPENAI_HEADER);
+
+  if (textOnly) {
+    if (!openai) {
+      return "Missing x-openai-api-key request-scoped credential";
+    }
+    return null;
+  }
+
+  const missing: string[] = [];
+  if (!daytona) missing.push("x-daytona-api-key");
+  if (!openai) missing.push("x-openai-api-key");
+  const [firstMissing] = missing;
+  if (!firstMissing) return null;
+  if (missing.length === 2) {
+    return "Missing x-daytona-api-key and x-openai-api-key request-scoped credentials";
+  }
+  return `Missing ${firstMissing} request-scoped credential`;
+}
+
+function credentialsMissingResponse(c: Context) {
+  const reason = credentialsMissingReason(c);
+  if (!reason) return null;
+  return c.json(
+    {
+      error: "credentials_missing",
+      code: "credentials_missing",
+      reason,
+    },
+    409,
+  );
+}
+
 function parseFormat(c: Context): ResponseFormat {
   const format = (c.req.query("format") ?? "").trim().toLowerCase();
   if (format === "json") return "json";
@@ -51,6 +96,7 @@ function jsonResult(result: RunDesignResult) {
   return {
     url: result.url,
     markdown: result.markdown,
+    images: result.images,
     doc: result.doc,
     tokens: result.tokens,
     visualDescription: result.visualDescription,
@@ -114,7 +160,11 @@ function publicEvent(event: RunDesignEvent) {
   if (event.phase === "render") {
     return event.status === "start"
       ? { phase: "render", status: "start" }
-      : { phase: "render", status: "ok", markdownLength: event.markdown.length };
+      : {
+          phase: "render",
+          status: "ok",
+          markdownLength: event.markdown.length,
+        };
   }
 
   return { phase: "run", status: "working" };
@@ -131,6 +181,9 @@ export function createGetDesignHandler(runDesign: RunDesignFn) {
       return c.json({ error: message }, 400);
     }
 
+    const blocked = credentialsMissingResponse(c);
+    if (blocked) return blocked;
+
     try {
       const result = await runDesign(parsed.data, {
         visualRequirement: parseVisualRequirement(c),
@@ -145,7 +198,7 @@ export function createGetDesignHandler(runDesign: RunDesignFn) {
         });
       }
 
-      return c.body(result.markdown, 200, {
+      return c.body(embedDesignImages(result.markdown, result.images), 200, {
         "content-type": "text/markdown; charset=utf-8",
         "cache-control": "no-store",
         "x-getdesign-mode": result.mode,
@@ -160,8 +213,7 @@ export function createGetDesignHandler(runDesign: RunDesignFn) {
             retryWith: {
               header: TEXT_ONLY_HEADER,
               value: "text_only",
-              note:
-                "Resend the request with this header to receive a text-only design.md.",
+              note: "Resend the request with this header to receive a text-only design.md.",
             },
           },
           409,
@@ -183,6 +235,9 @@ export function createStreamDesignHandler(runDesign: RunDesignFn) {
         parsed.error.issues[0]?.message ?? "Invalid `url` query parameter";
       return c.json({ error: message }, 400);
     }
+
+    const blocked = credentialsMissingResponse(c);
+    if (blocked) return blocked;
 
     return streamSSE(c, async (stream) => {
       try {

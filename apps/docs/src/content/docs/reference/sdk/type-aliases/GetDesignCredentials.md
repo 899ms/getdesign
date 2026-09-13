@@ -7,7 +7,7 @@ title: "GetDesignCredentials"
 
 > **GetDesignCredentials** = `object`
 
-Defined in: [packages/sdk/src/index.ts:13](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L13)
+Defined in: [packages/sdk/src/index.ts:16](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L16)
 
 ## Properties
 
@@ -15,7 +15,7 @@ Defined in: [packages/sdk/src/index.ts:13](https://github.com/MohtashamMurshid/g
 
 > `optional` **daytonaApiKey?**: `string`
 
-Defined in: [packages/sdk/src/index.ts:14](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L14)
+Defined in: [packages/sdk/src/index.ts:17](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L17)
 
 ***
 
@@ -23,4 +23,4 @@ Defined in: [packages/sdk/src/index.ts:14](https://github.com/MohtashamMurshid/g
 
 > `optional` **openaiApiKey?**: `string`
 
-Defined in: [packages/sdk/src/index.ts:15](https://github.com/MohtashamMurshid/getdesign/blob/52146c2000790ad5ab7577305b1ea2f4593205eb/packages/sdk/src/index.ts#L15)
+Defined in: [packages/sdk/src/index.ts:18](https://github.com/MohtashamMurshid/getdesign/blob/9a29e986e32c10258a13bc0b87db6f8c31a09f1d/packages/sdk/src/index.ts#L18)

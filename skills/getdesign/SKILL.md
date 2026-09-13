@@ -19,7 +19,7 @@ Do **not** use this skill for: generating runnable code from a URL, Figma/Sketch
 
 ## Output contract
 
-The single deliverable is a markdown file — default name `design.md` — containing **exactly** these 9 H2 sections in this order:
+The deliverable is `design.md` plus an `images/` directory containing the actual captured screenshots referenced by the document. Keep them together when sharing. The markdown file — default name `design.md` — containing **exactly** these 9 H2 sections in this order:
 
 1. Visual Theme & Atmosphere
 2. Color Palette & Roles
@@ -50,7 +50,8 @@ Follow this sequence. Copy the checklist into your working notes and tick items 
 - [ ] 4. Extract tokens (colors, type, spacing, radii, shadows, breakpoints)
 - [ ] 5. Draft DesignDoc (9 sections) grounded in tokens + screenshot
 - [ ] 6. Render design.md from the draft
-- [ ] 7. Verify grounding + section order, then write the file
+- [ ] 7. Save screenshots under images/, link them in design.md, and verify every image opens
+- [ ] 8. Verify grounding + section order, then write the files
 ```
 
 ### 1. Validate URL
@@ -79,7 +80,9 @@ If your agent runtime has a browser tool (Playwright, Chrome DevTools, `agent-br
 - If there is no explicit toggle, still check browser-emulated `prefers-color-scheme: light` and `prefers-color-scheme: dark` when possible.
 - Keep mode labels in your notes so you know which observations came from light mode vs dark mode.
 
-If you have no browser tool, skip this step — continue with CSS-only grounding — and note the limitation in your internal planning (the "Visual Theme" prose will be slightly thinner without a screenshot).
+Save the actual capture files under `images/` beside `design.md`, with descriptive names such as `hero-light.png`, `hero-dark.png`, and `full-page.png`. Include Markdown image references near the top of the document, before its first H2. These are required deliverables, not temporary analysis artifacts. Open each saved file to verify that it contains the page, rather than a loading screen or access gate. Never substitute generated artwork, a favicon, or a palette strip for a site capture.
+
+If capture is unavailable or fails, stop and explain the capture problem. Continue without images only when the user explicitly chooses text-only. Put a visible text-only note at the top of that output; do not silently degrade.
 
 ### 4. Extract tokens
 
@@ -134,7 +137,7 @@ Before writing the final file, run this self-check:
 - [ ] The font families in Typography appear in the fetched CSS or `@font-face` blocks.
 - [ ] Breakpoints match actual `@media (min-width: …)` queries.
 - [ ] Light mode and dark mode were both checked whenever the site exposes or implies dual-theme support.
-- [ ] A browser screenshot was taken whenever a browser tool was available.
+- [ ] Real screenshots are saved beside the document, referenced with relative Markdown paths, and every referenced file opens. The only exception is an explicitly selected and visibly labeled text-only run.
 - [ ] No placeholder text like "TBD", "(example)", or "Lorem ipsum".
 
 If any check fails, fix before writing. Then write the file to `design.md` (or the path the user requested). Report a one-paragraph summary plus the absolute file path.
@@ -143,7 +146,7 @@ If any check fails, fix before writing. Then write the file to `design.md` (or t
 
 | Missing tool | Degrade to |
 | --- | --- |
-| No browser / screenshot | CSS-only grounding; keep the Visual Theme brief and fact-based. Skip pixel-level observations. If dual themes exist, still inspect fetched CSS for both light and dark mode selectors. |
+| No browser / screenshot | Stop and report the missing capture capability. CSS-only output is allowed only after the user explicitly selects text-only; label that limitation in the document. |
 | Fetch blocked (403 / Cloudflare) | Report the failure, try the site's `/` and `/about` as alternates, otherwise stop and surface the error to the user. No guessing. |
 | CSS-in-JS only, no stylesheets | Parse inline `<style>` tags; if still empty, use the screenshot plus HTML class names to infer only what is visible. State the limitation at the top of `design.md`. |
 

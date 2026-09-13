@@ -165,3 +165,31 @@
   .fade-in-up { animation: none; }
   .caret::after { animation: none; }
 }
+
+/* WorkOS UserProfile is a settings card, not a full-page shell. */
+#account .woswidgets-root {
+  display: block;
+  block-size: auto;
+  height: auto;
+  min-height: 0;
+}
+
+#account .woswidgets-root .rt-Card {
+  height: auto;
+  min-height: 0;
+  --card-padding: 0px;
+  --base-card-padding-top: 0px;
+  --base-card-padding-right: 0px;
+  --base-card-padding-bottom: 0px;
+  --base-card-padding-left: 0px;
+  padding: 0;
+}
+
+#account .woswidgets-root .rt-DataListRoot {
+  gap: 0;
+  align-content: start;
+}
+
+#account .woswidgets-root .rt-DataListItem {
+  padding: 0.75rem 1rem;
+}

@@ -51,6 +51,7 @@ export type InputBarProps = {
   status: ChatStatus;
   onStop: () => void;
   placeholder?: string;
+  sendLabel?: string;
   className?: string;
   size?: "default" | "lg";
 
@@ -73,6 +74,8 @@ export type InputBarProps = {
   value?: string;
   onChange?: (value: string) => void;
   disabled?: boolean;
+  /** Keep editing enabled while preventing submission. */
+  submitDisabled?: boolean;
   autoFocus?: boolean;
   suggestions?:
     | SuggestionItem[]
@@ -133,6 +136,7 @@ export const InputBar = memo(function InputBar({
   status,
   onStop,
   placeholder,
+  sendLabel = "Send",
   className,
   size = "default",
   onAttach,
@@ -146,6 +150,7 @@ export const InputBar = memo(function InputBar({
   value: controlledValue,
   onChange: controlledOnChange,
   disabled,
+  submitDisabled,
   autoFocus,
   suggestions = [],
   typingAnimation,
@@ -210,10 +215,10 @@ export const InputBar = memo(function InputBar({
 
   const handleSubmit = useCallback(() => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming || disabled) return;
+    if (!trimmed || isStreaming || disabled || submitDisabled) return;
     onSend({ role: "user", content: trimmed });
     setInput("");
-  }, [input, isStreaming, disabled, onSend, setInput]);
+  }, [input, isStreaming, disabled, submitDisabled, onSend, setInput]);
 
   const handleInfoBarClose = useCallback(() => {
     setIsInfoBarOpen(false);
@@ -563,7 +568,11 @@ export const InputBar = memo(function InputBar({
                   <AttachmentButton onClick={onAttach} />
                 )}
                 {/* Send / Stop button */}
-                <div
+                <button
+                  type="button"
+                  aria-label={isStreaming ? "Stop" : sendLabel}
+                  title={isStreaming ? "Stop" : sendLabel}
+                  disabled={!isStreaming && (!hasInput || disabled || submitDisabled)}
                   onClick={() => {
                     if (isStreaming) {
                       onStop();
@@ -571,18 +580,18 @@ export const InputBar = memo(function InputBar({
                       handleSubmit();
                     }
                   }}
-                  className="cursor-pointer"
+                  className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default"
                 >
                   <SendButton
                     state={
                       isStreaming
                         ? "streaming"
-                        : hasInput && !disabled
+                        : hasInput && !disabled && !submitDisabled
                           ? "typing"
                           : "idle"
                     }
                   />
-                </div>
+                </button>
               </div>
             </div>
           </div>
