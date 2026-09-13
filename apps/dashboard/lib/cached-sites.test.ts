@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { getCachedSite, listCachedSites } from "./cached-sites";
+import { getCachedSite, listCachedSites, pickRandomItems } from "./cached-sites";
 import { canUseBundledCatalog } from "./cached-site-fallback";
 import { findCachedSite } from "./cached-site-url";
 
@@ -31,6 +31,23 @@ describe("Curated cached sites", () => {
     for (const url of ["https://linear.app/pricing", "https://linear.app/?locale=fr", "http://linear.app", "https://linear.app.evil.test", "https://linear.app@evil.test", "bad url", ""]) {
       expect(findCachedSite(url, sites)).toBeUndefined();
     }
+  });
+
+  test("picks a unique random subset from the cached catalog", () => {
+    const slugs = listCachedSites().map(site => site.slug);
+    expect(pickRandomItems([], 3)).toEqual([]);
+    expect(pickRandomItems(slugs, 20)).toEqual(slugs);
+    const original = Math.random;
+    Math.random = () => 0;
+    try {
+      expect(pickRandomItems(slugs, 3)).toEqual(slugs.slice(0, 3));
+    } finally {
+      Math.random = original;
+    }
+    const picked = pickRandomItems(slugs, 3);
+    expect(picked).toHaveLength(3);
+    expect(new Set(picked).size).toBe(3);
+    expect(picked.every(slug => slugs.includes(slug))).toBe(true);
   });
 });
 

@@ -13,15 +13,26 @@ type RunFixture = {
 let recent: RunFixture[] = [];
 let artifacts: Record<string, { markdown?: string }> = {};
 
+function summarize(runs: RunFixture[]) {
+  return {
+    total: runs.length,
+    completed: runs.filter((run) => run.status === "completed").length,
+    failed: runs.filter((run) => run.status === "failed").length,
+    active: runs.filter(
+      (run) => run.status === "queued" || run.status === "running",
+    ).length,
+  };
+}
+
 const query = mock(async (_reference: unknown, args: Record<string, unknown>) => {
-  if (getFunctionName(_reference as Parameters<typeof getFunctionName>[0]) === "cachedSites:list") return listCachedSites();
-  if (getFunctionName(_reference as Parameters<typeof getFunctionName>[0]) === "designRunArtifacts:getTileUrls") return [{ url: "https://example.com/captured.png" }];
+  const name = getFunctionName(_reference as Parameters<typeof getFunctionName>[0]);
+  if (name === "cachedSites:list") return listCachedSites();
+  if (name === "designRuns:summarizeForUser") return summarize(recent);
+  if (name === "designRunArtifacts:getTileUrls") return [{ url: "https://example.com/captured.png" }];
   if ("runId" in args) return artifacts[String(args.runId)] ?? {};
   return recent.slice(0, Number(args.limit));
 });
 
-// Mock auth/data and the independently tested onboarding server boundary.
-// Keep the real onboarding UI in this render to check the combined Overview.
 mock.module("@workos-inc/authkit-nextjs", () => ({
   withAuth: async () => ({ user: { id: "overview-test-user" }, accessToken: "overview-token" }),
 }));
@@ -47,11 +58,23 @@ function completedRun(id: string): RunFixture {
   return { _id: id, domain: `${id}.example`, status: "completed" };
 }
 
+function queryNames() {
+  return query.mock.calls.map(
+    ([reference]) =>
+      getFunctionName(reference as Parameters<typeof getFunctionName>[0]),
+  );
+}
+
 describe("Overview recent-run summary", () => {
-  test("keeps the shared catalog off Overview", async () => {
+  test("shows catalog stats and an examples preview when there are no runs", async () => {
     const html = renderToStaticMarkup(await Page());
-    expect(html).not.toContain("Cached sites");
-    expect(html).not.toContain('href="/sites/linear"');
+    const catalog = listCachedSites();
+    expect(html).toContain("Cached sites");
+    expect(html).toContain(String(catalog.length));
+    expect(html).toContain("Your runs");
+    expect(html).toContain("Browse all examples");
+    expect(html).toContain(`href="/sites/${catalog[0]!.slug}"`);
+    expect((html.match(/href="\/sites\//g) ?? []).length).toBe(4);
     expect(html).not.toContain("Recent runs");
     expect(html).not.toContain("0 shown");
     expect(html).toContain('href="/account#provider-keys"');
@@ -72,12 +95,10 @@ describe("Overview recent-run summary", () => {
     expect(html).not.toContain("No completed design systems yet");
   });
 
-  test("removes unsupported statistics and the inactive View all control", async () => {
+  test("removes unsupported placeholder statistics", async () => {
     const html = renderToStaticMarkup(await Page());
 
     for (const removed of [
-      "Your runs",
-      "Total runs",
       "3.2M",
       "13k",
       "google.com/s2/favicons",
@@ -99,31 +120,43 @@ describe("Overview recent-run summary", () => {
 
     const html = renderToStaticMarkup(await Page());
 
-    expect(html).toContain("1 shown");
-    expect(html).toContain("Completed runs with design files from your latest 24 runs.");
+    expect(html).toContain("Browse all runs");
+    expect(html).toContain("Completed runs with design files from your latest 12 runs.");
     expect(html).toContain('href="/runs/visible"');
+    expect(html).toContain('href="/runs"');
+    expect(html).toContain(">5<");
+    expect(html).toContain(">2<");
+    expect(html).toContain(">1<");
     for (const id of ["queued", "running", "failed", "missing"]) {
       expect(html).not.toContain(`href="/runs/${id}"`);
     }
     expect(html).toContain("Extract");
     expect(html).not.toContain("Turn a website into a design system");
-    expect(query.mock.calls.map(([, args]) => args)).toEqual([
-      { userId: "overview-test-user", limit: 24 },
-      { userId: "overview-test-user", runId: "visible" },
-      { userId: "overview-test-user", runId: "missing" },
-      { userId: "overview-test-user", runId: "visible" },
-    ]);
+    expect(queryNames()).toContain("designRuns:listRecent");
+    expect(queryNames()).toContain("designRuns:summarizeForUser");
+    expect(queryNames()).toContain("cachedSites:list");
+    expect(
+      query.mock.calls.map(([, args]) => args),
+    ).toContainEqual({ userId: "overview-test-user", limit: 12 });
+    expect(
+      query.mock.calls.filter(
+        ([reference]) =>
+          getFunctionName(reference as Parameters<typeof getFunctionName>[0]) ===
+          "designRunArtifacts:getForRun",
+      ),
+    ).toHaveLength(2);
   });
 
-  test("labels a full query window as shown runs, not a lifetime total", async () => {
+  test("keeps the recent list to six completed runs", async () => {
     recent = Array.from({ length: 25 }, (_, i) => completedRun(`run-${i}`));
 
     const html = renderToStaticMarkup(await Page());
 
-    expect(html).toContain("24 shown");
-    expect(html).toContain("from your latest 24 runs.");
-    expect(html.match(/href="\/runs\//g)).toHaveLength(24);
-    expect(html).not.toContain('href="/runs/run-24"');
+    expect(html).toContain("Browse all runs");
+    expect(html).toContain("from your latest 12 runs.");
+    expect(html.match(/href="\/runs\//g)).toHaveLength(6);
+    expect(html).not.toContain('href="/runs/run-6"');
+    expect(html).toContain(">25<");
   });
 });
 
@@ -145,4 +178,72 @@ test("a legacy cached row cannot crash the catalog or display an image-free card
   expect(html).toContain(`href="/sites/${site.slug}"`);
   expect(html).not.toContain('href="/sites/legacy"');
   expect(html).toContain("1 available");
+});
+
+test("Overview examples preview links to the full catalog", async () => {
+  const { CachedSites } = await import("../components/cached-sites");
+  const sites = listCachedSites();
+  const html = renderToStaticMarkup(
+    <CachedSites sites={sites} previewCount={4} />,
+  );
+  expect(html).toContain("Browse all examples");
+  expect((html.match(/href="\/sites\//g) ?? []).length).toBe(4);
+  expect(html).not.toContain("available");
+});
+
+test("Runs lists every recent status without mixing in cached sites", async () => {
+  const { default: RunsPage } = await import("../app/(dashboard)/runs/page");
+  recent = [
+    completedRun("visible"),
+    { _id: "queued", domain: "queued.example", status: "queued" },
+    { _id: "failed", domain: "failed.example", status: "failed" },
+  ];
+  const html = renderToStaticMarkup(await RunsPage());
+  expect(html).toContain("Recent runs");
+  expect(html).toContain("3 available");
+  expect(html).toContain('href="/runs/visible"');
+  expect(html).toContain('href="/runs/queued"');
+  expect(html).toContain('href="/runs/failed"');
+  expect(html).toContain("Queued");
+  expect(html).toContain("Failed");
+  expect(html).toContain("Extract");
+  expect(html).not.toContain("Browse all runs");
+  expect(html).not.toContain("Turn a website into a design system");
+  expect(
+    query.mock.calls.map(([, args]) => args),
+  ).toContainEqual({ userId: "overview-test-user", limit: 48 });
+});
+
+test("Runs shows an empty state when the user has no extractions", async () => {
+  const { default: RunsPage } = await import("../app/(dashboard)/runs/page");
+  const html = renderToStaticMarkup(await RunsPage());
+  expect(html).toContain("No runs yet");
+  expect(html).toContain("Start an extraction from Agent.");
+  expect(html).toContain('href="/agent"');
+  expect(html).not.toContain("Recent runs");
+});
+
+test("Overview recent-run preview links to the Runs page", async () => {
+  const { RecentRuns } = await import("../components/recent-runs");
+  const html = renderToStaticMarkup(
+    <RecentRuns
+      preview
+      runs={[
+        {
+          slug: "visible",
+          domain: "visible.example",
+          status: "completed",
+          title: "Visible",
+          theme: "Clean",
+          accent: "#abcdef",
+          image: null,
+          textOnly: false,
+        },
+      ]}
+    />,
+  );
+  expect(html).toContain("Browse all runs");
+  expect(html).toContain('href="/runs"');
+  expect(html).toContain('href="/runs/visible"');
+  expect(html).not.toContain("available");
 });

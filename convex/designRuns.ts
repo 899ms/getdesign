@@ -157,6 +157,37 @@ export const listRecent = query({
   },
 });
 
+const RUN_SUMMARY_CAP = 500;
+
+export const summarizeForUser = query({
+  args: {
+    userId: v.string(),
+  },
+  returns: v.object({
+    total: v.number(),
+    completed: v.number(),
+    failed: v.number(),
+    active: v.number(),
+  }),
+  handler: async (ctx, { userId }) => {
+    await requireMatchingWorkOsUserId(ctx, userId);
+    const rows = await ctx.db
+      .query("designRuns")
+      .withIndex("by_user_updated", (q) => q.eq("userId", userId))
+      .take(RUN_SUMMARY_CAP);
+    const live = rows.filter((run) => !run.deletedAt);
+    let completed = 0;
+    let failed = 0;
+    let active = 0;
+    for (const run of live) {
+      if (run.status === "completed") completed += 1;
+      else if (run.status === "failed") failed += 1;
+      else if (run.status === "queued" || run.status === "running") active += 1;
+    }
+    return { total: live.length, completed, failed, active };
+  },
+});
+
 export const markDeleted = mutation({
   args: {
     id: v.id("designRuns"),

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation"
 import { BrandMark } from "@/components/brand-mark"
 import { NavUser } from "@/components/nav-user"
 import { DashboardCommandMenu } from "@/components/dashboard-command-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   NAV_MAIN,
   NAV_SECONDARY,
@@ -32,15 +33,21 @@ const subscribePlatform = () => () => {}
 
 function FlatNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
   const isActive =
-    pathname === item.url ||
-    (item.url !== "/" && pathname?.startsWith(item.url))
+    !item.external &&
+    (pathname === item.url ||
+      (item.url !== "/" && pathname?.startsWith(item.url)))
+  const link = item.external ? (
+    <a href={item.url} target="_blank" rel="noreferrer" />
+  ) : (
+    <Link href={item.url} />
+  )
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         tooltip={item.title}
         isActive={isActive}
-        render={<Link href={item.url} />}
+        render={link}
         className="gap-2.5 py-1.5"
       >
         <HugeiconsIcon
@@ -141,8 +148,9 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
           </SidebarMenu>
         </SidebarContent>
 
-        {/* Footer: user */}
+        {/* Footer: theme + user */}
         <SidebarFooter className="px-2 pb-3">
+          <ThemeToggle />
           <NavUser user={user} />
         </SidebarFooter>
       </Sidebar>

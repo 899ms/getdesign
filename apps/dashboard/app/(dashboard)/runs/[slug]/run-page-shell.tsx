@@ -60,7 +60,7 @@ export function RunPageShell({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Overview</BreadcrumbLink>
+                  <BreadcrumbLink href="/runs">Runs</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>

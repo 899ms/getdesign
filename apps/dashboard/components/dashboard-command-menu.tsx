@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button"
 import {
   NAV_COMMANDS,
   matchesNavigation,
+  navItemHint,
+  navigateNavItem,
   type NavItem,
 } from "@/lib/dashboard-navigation"
 import {
@@ -48,7 +50,12 @@ export function DashboardCommandMenu({
 
   function navigate(item: NavItem) {
     onOpenChange(false)
-    router.push(item.url)
+    navigateNavItem(item, {
+      push: (url) => router.push(url),
+      open: (url) => {
+        window.open(url, "_blank", "noopener,noreferrer")
+      },
+    })
   }
 
   return (
@@ -131,7 +138,7 @@ export function DashboardCommandMenu({
                   />
                   <span className="flex-1">{item.title}</span>
                   <span className="text-xs text-muted-foreground">
-                    {item.url}
+                    {navItemHint(item)}
                   </span>
                 </Autocomplete.Item>
               )}

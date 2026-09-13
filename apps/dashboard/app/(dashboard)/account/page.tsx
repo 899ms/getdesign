@@ -14,6 +14,7 @@ import {
 import { getConvexClient } from "@/lib/convex-server";
 import { hasRequiredRunCredentials } from "@/lib/credential-readiness";
 
+import { DeveloperSurfaces } from "./developer-surfaces";
 import { ProviderKeysCard } from "./provider-keys-card";
 
 export default async function AccountPage() {
@@ -46,6 +47,7 @@ export default async function AccountPage() {
           keys={keys}
           credentialsReady={hasRequiredRunCredentials(keys)}
         />
+        <DeveloperSurfaces />
         <WorkOsWidgetsProvider>
           <WidgetLoadingGate>
             <UserProfile authToken={accessToken} />

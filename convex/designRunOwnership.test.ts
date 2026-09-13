@@ -3,11 +3,14 @@ import { describe, expect, mock, test } from "bun:test";
 import * as runs from "./designRuns";
 import * as artifacts from "./designRunArtifacts";
 
+process.env.WORKOS_CLIENT_ID ??= "client_test";
+
 // Exercise registered handlers directly, with auth and database boundaries mocked.
 const operations = [
   ["create", runs.create, { userId: "owner", url: "https://example.com" }],
   ["get", runs.get, { userId: "owner", id: "run" }],
   ["listRecent", runs.listRecent, { userId: "owner" }],
+  ["summarizeForUser", runs.summarizeForUser, { userId: "owner" }],
   ["markDeleted", runs.markDeleted, { userId: "owner", id: "run" }],
   ["beginStep", runs.beginStep, { userId: "owner", id: "run", step: "crawl", message: "Reading" }],
   ["finishStep", runs.finishStep, { userId: "owner", id: "run", step: "crawl", status: "ok", message: "Read" }],
@@ -109,4 +112,32 @@ test("recovery rejects a live owned run before creating a second paid run", asyn
   await expect(invoke(runs.create, ctx, { userId: "owner", url: "https://example.com", rerunOf: "run" })).rejects.toThrow("still active");
   expect(ctx.db.insert).not.toHaveBeenCalled();
   expect(ctx.db.patch).not.toHaveBeenCalled();
+});
+
+test("summarizeForUser counts live owned runs and ignores deleted rows", async () => {
+  const previous = process.env.WORKOS_CLIENT_ID;
+  process.env.WORKOS_CLIENT_ID = "client_test";
+  try {
+    const ctx = context("owner");
+    ctx.db.query = mock(() => ({
+      withIndex: () => ({
+        take: async () => [
+          { status: "completed" },
+          { status: "failed" },
+          { status: "completed", deletedAt: 1 },
+          { status: "running" },
+          { status: "queued" },
+        ],
+      }),
+    }));
+    expect(await invoke(runs.summarizeForUser, ctx, { userId: "owner" })).toEqual({
+      total: 4,
+      completed: 1,
+      failed: 1,
+      active: 2,
+    });
+  } finally {
+    if (previous === undefined) delete process.env.WORKOS_CLIENT_ID;
+    else process.env.WORKOS_CLIENT_ID = previous;
+  }
 });

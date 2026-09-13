@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { getFunctionName } from "convex/server";
 import { ExtractionGuide } from "../../components/extraction-guide";
 import { hasRequiredRunCredentials } from "../../lib/credential-readiness";
-import { listCachedSites } from "../../lib/cached-sites";
+import { getCachedSite, listCachedSites } from "../../lib/cached-sites";
 import { fixture, navigate, refresh } from "./onboarding-state";
 
 export default function Link({
@@ -30,6 +30,9 @@ export function useRouter() {
 export function redirect(path: string): never {
   throw new Error(`Unexpected fixture redirect: ${path}`);
 }
+export function notFound(): never {
+  throw new Error("notFound");
+}
 export async function withAuth() {
   return { user: { id: "fixture-user" }, accessToken: "fixture-token" };
 }
@@ -54,7 +57,10 @@ export function useConvex() {
 }
 export function getConvexClient() {
   return {
-    async query(reference: Parameters<typeof getFunctionName>[0]) {
+    async query(
+      reference: Parameters<typeof getFunctionName>[0],
+      args: Record<string, unknown> = {},
+    ) {
       switch (getFunctionName(reference)) {
         case "designRuns:listRecent":
           return fixture.populated
@@ -64,8 +70,22 @@ export function getConvexClient() {
                   domain: "example.test",
                   status: "completed",
                 },
+                {
+                  _id: "fixture-running-run",
+                  domain: "linear.app",
+                  status: "running",
+                },
+                {
+                  _id: "fixture-failed-run",
+                  domain: "stripe.com",
+                  status: "failed",
+                },
               ]
             : [];
+        case "designRuns:summarizeForUser":
+          return fixture.populated
+            ? { total: 3, completed: 1, failed: 1, active: 1 }
+            : { total: 0, completed: 0, failed: 0, active: 0 };
         case "designRunArtifacts:getForRun":
           return { markdown: fixture.markdown };
         case "designRunArtifacts:getTileUrls":
@@ -74,6 +94,8 @@ export function getConvexClient() {
           return fixture.keys;
         case "cachedSites:list":
           return listCachedSites();
+        case "cachedSites:get":
+          return getCachedSite(String(args.slug));
         default:
           throw new Error("Unexpected query in local fixture");
       }

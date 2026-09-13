@@ -25,6 +25,18 @@ export function formatCaptureDate(value: string) {
   }).format(new Date(value));
 }
 
+export function pickRandomItems<T>(items: readonly T[], count: number): T[] {
+  if (count >= items.length) return items.slice();
+  const pool = items.slice();
+  for (let i = 0; i < count; i++) {
+    const j = i + Math.floor(Math.random() * (pool.length - i));
+    const current = pool[i]!;
+    pool[i] = pool[j]!;
+    pool[j] = current;
+  }
+  return pool.slice(0, count);
+}
+
 
 /** Production always reads the seeded database. Old local/preview backends can
  * still display the curated bundle until their schema and functions deploy. */

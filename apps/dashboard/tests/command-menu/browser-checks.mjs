@@ -59,7 +59,7 @@ export async function verifyCommandMenu(tab, { nativeKeyboard = true } = {}) {
   )
   check((await highlight()) === "Overview/", "First command highlighted")
   await search().press("ArrowDown")
-  check((await highlight()) === "Examples/sites", "ArrowDown chooses Examples")
+  check((await highlight()) === "Agent/agent", "ArrowDown chooses Agent")
   await search().press("ArrowUp")
   check((await highlight()) === "Overview/", "ArrowUp chooses Overview")
   await search().press("ArrowUp")
@@ -162,23 +162,18 @@ export async function verifyCommandMenu(tab, { nativeKeyboard = true } = {}) {
     "Enter navigates Settings to /account and closes"
   )
 
-  // All routes below were observed in the sidebar and verified against page files.
+  // In-app destinations. Docs is external and is checked separately.
   const destinations = [
     ["Overview", "/"],
     ["Agent", "/agent"],
+    ["Runs", "/runs"],
     ["Examples", "/sites"],
-    ["API", "/api"],
-    ["CLI", "/cli"],
-    ["SDK", "/sdk"],
-    ["Skills", "/skills"],
-    ["Support", "/support"],
-    ["Docs", "/docs"],
     ["Settings", "/account"],
   ]
   for (const [title, route] of destinations) {
     await origin().press("Meta+k")
     check(
-      (await tab.playwright.getByRole("option").count()) === 10,
+      (await tab.playwright.getByRole("option").count()) === 6,
       `Reopening clears search before ${title}`
     )
     await search().fill(title)
@@ -194,12 +189,21 @@ export async function verifyCommandMenu(tab, { nativeKeyboard = true } = {}) {
     )
   }
   await origin().press("Meta+k")
+  check((await dialog().count()) === 1, "Reopen for Docs command")
+  await search().fill("Docs")
+  check(
+    (await tab.playwright.getByRole("option").count()) === 1 &&
+      (await highlight()) === "Docsdocs.getdesign.app",
+    "Docs filters to the external docs host"
+  )
+  await search().press("Escape")
+  await origin().press("Meta+k")
   check((await dialog().count()) === 1, "Reopen for pointer selection")
   await tab.playwright
-    .getByRole("option", { name: "Docs /docs", exact: true })
+    .getByRole("option", { name: "Examples /sites", exact: true })
     .click()
   check(
-    (await tab.url()) === "http://127.0.0.1:3115/docs" &&
+    (await tab.url()) === "http://127.0.0.1:3115/sites" &&
       (await dialog().count()) === 0,
     "Pointer selection navigates and closes"
   )

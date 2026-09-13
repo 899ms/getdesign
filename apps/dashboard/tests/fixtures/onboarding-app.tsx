@@ -2,9 +2,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import Overview from "../../app/(dashboard)/page";
 import { ProviderKeysCard } from "../../app/(dashboard)/account/provider-keys-card";
-import { AgentCommand } from "../../app/(dashboard)/agent/agent-command";
+import Agent from "../../app/(dashboard)/agent/page";
+import Runs from "../../app/(dashboard)/runs/page";
 import { RunPageShell } from "../../app/(dashboard)/runs/[slug]/run-page-shell";
 import Sites from "../../app/(dashboard)/sites/page";
+import CachedSite from "../../app/(dashboard)/sites/[slug]/page";
 import { hasRequiredRunCredentials } from "../../lib/credential-readiness";
 import { fixture, navigate, refresh } from "./onboarding-state";
 
@@ -39,6 +41,9 @@ function App() {
   const [version, setVersion] = useState(0);
   const [overview, setOverview] = useState<ReactNode>(null);
   const [sites, setSites] = useState<ReactNode>(null);
+  const [agent, setAgent] = useState<ReactNode>(null);
+  const [runsPage, setRunsPage] = useState<ReactNode>(null);
+  const [cachedSite, setCachedSite] = useState<ReactNode>(null);
   const [download, setDownload] = useState("");
   const [lastKey, setLastKey] = useState("");
   useEffect(() => {
@@ -53,6 +58,13 @@ function App() {
   useEffect(() => {
     void Overview().then(setOverview);
     void Sites().then(setSites);
+    void Runs().then(setRunsPage);
+    const refresh = new URLSearchParams(window.location.search).get("refresh") ?? undefined;
+    void Agent({ searchParams: Promise.resolve({ refresh }) }).then(setAgent);
+    const siteSlug = window.location.pathname.match(/^\/sites\/([^/]+)$/)?.[1];
+    if (siteSlug) {
+      void CachedSite({ params: Promise.resolve({ slug: siteSlug }) }).then(setCachedSite);
+    }
   }, [version]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => setLastKey(event.key);
@@ -81,6 +93,7 @@ function App() {
         <button onClick={() => navigate("/")}>Overview</button>
         <button onClick={() => navigate("/account")}>Account</button>
         <button onClick={() => navigate("/agent")}>Agent</button>
+        <button onClick={() => navigate("/runs")}>Runs</button>
         <button onClick={() => navigate("/sites")}>Examples</button>
         <button
           onClick={() => {
@@ -115,10 +128,9 @@ function App() {
             <ProviderKeysCard keys={fixture.keys} credentialsReady={ready} />
           </div>
         ) : path === "/agent" ? (
-          <AgentCommand
-            credentialsReady={ready}
-            user={{ id: "fixture-user" }}
-          />
+          agent
+        ) : path === "/runs" ? (
+          runsPage
         ) : path.startsWith("/runs/") ? (
           <RunPageShell
             runId="fixture-completed-run-with-a-long-identifier"
@@ -135,6 +147,8 @@ function App() {
           />
         ) : path === "/sites" ? (
           sites
+        ) : path.startsWith("/sites/") ? (
+          cachedSite
         ) : (
           overview
         )}

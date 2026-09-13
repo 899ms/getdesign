@@ -3,6 +3,7 @@
 import { getAnalytics } from "@getdesign/analytics";
 import Link from "next/link";
 import { findCachedSite } from "@/lib/cached-site-url";
+import { runStatusLabel, type RunStatus } from "@/lib/design-run-preview";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useConvexAuth, useMutation } from "convex/react";
@@ -12,8 +13,12 @@ import { BrandMark } from "@/components/brand-mark";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
+type CachedExample = { slug: string; title: string; url: string };
+
 type AgentCommandProps = {
-  cachedSites?: { slug: string; url: string }[];
+  cachedSites?: CachedExample[];
+  exampleSuggestions?: CachedExample[];
+  recentRuns?: { id: string; domain: string; status: RunStatus }[];
   refreshSite?: { slug: string; url: string } | null;
   credentialsReady: boolean;
   user: {
@@ -53,7 +58,14 @@ function isProbablyUrl(value: string) {
   }
 }
 
-export function AgentCommand({ credentialsReady, user, cachedSites = [], refreshSite = null }: AgentCommandProps) {
+export function AgentCommand({
+  credentialsReady,
+  user,
+  cachedSites = [],
+  exampleSuggestions,
+  recentRuns = [],
+  refreshSite = null,
+}: AgentCommandProps) {
   const { isAuthenticated } = useConvexAuth();
   const router = useRouter();
   const createRun = useMutation(api.designRuns.create);
@@ -64,6 +76,13 @@ export function AgentCommand({ credentialsReady, user, cachedSites = [], refresh
   const [run, setRun] = useState<RunState | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const suggestions = input.trim()
+    ? []
+    : (exampleSuggestions ?? cachedSites.slice(0, 3)).map((site) => ({
+        id: site.slug,
+        label: site.title,
+        value: site.url,
+      }));
 
   return (
     <div className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-xl flex-col justify-center px-4 py-8">
@@ -89,6 +108,10 @@ export function AgentCommand({ credentialsReady, user, cachedSites = [], refresh
         disabled={!isAuthenticated || isRunning}
         submitDisabled={!credentialsReady && !useCached}
         placeholder="Enter a URL..."
+        suggestions={{
+          items: suggestions,
+          className: "mt-3 justify-center px-0",
+        }}
         onStop={() => {}}
         onSend={({ content }) => {
           const match = findCachedSite(content, cachedSites);
@@ -141,7 +164,44 @@ export function AgentCommand({ credentialsReady, user, cachedSites = [], refresh
         <p className="mt-2 text-center text-xs text-destructive">{error}</p>
       ) : null}
       {run ? <RunProgress run={run} /> : null}
+
+      <AgentRecentRuns runs={recentRuns} />
     </div>
+  );
+}
+
+function AgentRecentRuns({
+  runs,
+}: {
+  runs: { id: string; domain: string; status: RunStatus }[];
+}) {
+  const recent = runs.slice(0, 3);
+  if (recent.length === 0) return null;
+
+  return (
+    <section aria-labelledby="agent-recent-title" className="mt-8">
+      <div className="mb-1 flex items-center gap-2">
+        <h2 id="agent-recent-title" className="text-xs font-medium text-muted-foreground">
+          Recent
+        </h2>
+        <Link href="/runs" className="text-xs text-muted-foreground hover:text-foreground">
+          All
+        </Link>
+      </div>
+      <ul>
+        {recent.map((run) => (
+          <li key={run.id}>
+            <Link
+              href={`/runs/${run.id}`}
+              className="flex items-center justify-between gap-3 py-1.5 text-xs hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              <span className="min-w-0 truncate">{run.domain}</span>
+              <span className="shrink-0 text-muted-foreground">{runStatusLabel(run.status)}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

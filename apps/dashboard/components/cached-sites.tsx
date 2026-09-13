@@ -2,9 +2,17 @@ import Link from "next/link";
 import { hasCachedSiteImages } from "@convex/lib/cachedSiteSchema";
 import { formatCaptureDate } from "@/lib/cached-sites";
 
-export function CachedSites({ sites }: { sites: import("@/lib/cached-site-schema").CachedSiteSummary[] }) {
-  sites = sites.filter(hasCachedSiteImages);
-  if (sites.length === 0) return null;
+export function CachedSites({
+  sites,
+  previewCount,
+}: {
+  sites: import("@/lib/cached-site-schema").CachedSiteSummary[]
+  previewCount?: number
+}) {
+  const catalog = sites.filter(hasCachedSiteImages);
+  if (catalog.length === 0) return null;
+  const shown =
+    previewCount === undefined ? catalog : catalog.slice(0, previewCount);
 
   return (
     <section aria-labelledby="cached-sites-title" className="min-w-0">
@@ -15,10 +23,19 @@ export function CachedSites({ sites }: { sites: import("@/lib/cached-site-schema
             Cached design systems from public sites. Open or download without running an extraction.
           </p>
         </div>
-        <span className="text-xs text-muted-foreground">{sites.length} available</span>
+        {previewCount === undefined ? (
+          <span className="text-xs text-muted-foreground">{catalog.length} available</span>
+        ) : (
+          <Link
+            href="/sites"
+            className="text-xs font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Browse all examples
+          </Link>
+        )}
       </div>
-      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {sites.map(site => (
+      <div className={`grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 ${previewCount === undefined ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
+        {shown.map(site => (
           <Link
             key={site.slug}
             href={`/sites/${site.slug}`}

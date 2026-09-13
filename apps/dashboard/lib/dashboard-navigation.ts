@@ -2,21 +2,19 @@ import type { IconSvgElement } from "@hugeicons/react"
 import {
   DashboardBrowsingIcon,
   SparklesIcon,
+  Clock01Icon,
   GridViewIcon,
-  ApiIcon,
-  ComputerTerminalIcon,
-  CodeSquareIcon,
-  MagicWand01Icon,
   BookOpen02Icon,
   Settings05Icon,
-  CustomerSupportIcon,
 } from "@hugeicons/core-free-icons"
+import { docsUrl } from "@getdesign/content"
 
 export type NavItem = {
   title: string
   url: string
   icon: IconSvgElement
   keywords?: string
+  external?: boolean
 }
 
 export const NAV_MAIN: NavItem[] = [
@@ -28,34 +26,26 @@ export const NAV_MAIN: NavItem[] = [
   },
   { title: "Agent", url: "/agent", icon: SparklesIcon },
   {
+    title: "Runs",
+    url: "/runs",
+    icon: Clock01Icon,
+    keywords: "recent history extractions",
+  },
+  {
     title: "Examples",
     url: "/sites",
     icon: GridViewIcon,
     keywords: "cached sites catalog library",
   },
-  { title: "API", url: "/api", icon: ApiIcon },
-  {
-    title: "CLI",
-    url: "/cli",
-    icon: ComputerTerminalIcon,
-    keywords: "terminal command line",
-  },
-  { title: "SDK", url: "/sdk", icon: CodeSquareIcon, keywords: "typescript" },
-  { title: "Skills", url: "/skills", icon: MagicWand01Icon },
 ]
 
 export const NAV_SECONDARY: NavItem[] = [
   {
-    title: "Support",
-    url: "/support",
-    icon: CustomerSupportIcon,
-    keywords: "help",
-  },
-  {
     title: "Docs",
-    url: "/docs",
+    url: docsUrl(),
     icon: BookOpen02Icon,
-    keywords: "documentation",
+    keywords: "documentation help support api cli sdk skill surfaces",
+    external: true,
   },
   {
     title: "Settings",
@@ -74,4 +64,24 @@ export function matchesNavigation(item: NavItem, query: string) {
     .toLowerCase()
     .split(/\s+/)
     .every((word) => text.includes(word))
+}
+
+export function navItemHint(item: NavItem) {
+  if (!item.external) return item.url
+  try {
+    return new URL(item.url).host
+  } catch {
+    return item.url
+  }
+}
+
+export function navigateNavItem(
+  item: NavItem,
+  actions: { push: (url: string) => void; open: (url: string) => void },
+) {
+  if (item.external) {
+    actions.open(item.url)
+    return
+  }
+  actions.push(item.url)
 }
