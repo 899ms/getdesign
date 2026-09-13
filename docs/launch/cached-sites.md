@@ -10,10 +10,11 @@ The dashboard's checked-in `vercel.json` runs `bun run build:dashboard:vercel` f
 
 1. Require a production `CONVEX_DEPLOY_KEY` in the Vercel Production environment. A missing, preview or development key stops the build before deployment.
 2. Build the dashboard's generated workspace dependencies in order: types, content, tools, agent and SDK. These packages export `dist` files that are absent in a fresh checkout. A dependency failure stops the build before any deployment.
-3. Run `convex deploy` with the dashboard build command and `--cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL`. This connects the built frontend to the deployment selected by that key and deploys the backend/schema.
-4. Run the internal `cachedSites:seed` mutation using the same deployment key. A seed failure fails the Vercel build, preventing publication of the frontend.
+3. Copy Vercel's `WORKOS_CLIENT_ID` into the Convex deployment selected by the production key. Convex reads its own environment when evaluating `auth.config.ts`. A missing Vercel client ID stops the build before any work; a failed copy prevents deployment and seeding.
+4. Run `convex deploy` with the dashboard build command and `--cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL`. This connects the built frontend to the deployment selected by that key and deploys the backend/schema.
+5. Run the internal `cachedSites:seed` mutation using the same deployment key. A seed failure fails the Vercel build, preventing publication of the frontend.
 
-Configure `CONVEX_DEPLOY_KEY` with permission to deploy and execute the internal seed function. Keep `WORKOS_CLIENT_ID` configured in both Convex and the dashboard, along with the existing dashboard WorkOS and encryption settings. The deployment key is server-only and is never passed to browser code.
+Configure `CONVEX_DEPLOY_KEY` with permission to set deployment environment variables, deploy and execute the internal seed function. Set `WORKOS_CLIENT_ID` in Vercel Production, along with the existing dashboard WorkOS and encryption settings. Each production build synchronizes that client ID to Convex before deploying. Configure the client ID separately for development and preview Convex deployments. The deployment key is server-only and is never passed to browser code.
 
 The seed source is `convex/seedData/cached-sites.json`. A seed transaction inserts missing slugs, updates older or changed snapshots, and leaves identical or newer database snapshots untouched. Repeated deployments create no duplicate rows. It never deletes extra catalog entries or touches private runs, credentials or users. No model calls or new captures occur during deployment.
 

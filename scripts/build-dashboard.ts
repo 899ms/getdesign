@@ -18,8 +18,15 @@ export function dashboardBuildSteps(env: Environment): BuildStep[] {
     if (!key || !/^prod:[^:|]+\|.+$/.test(key)) {
       throw new Error("Production requires a production CONVEX_DEPLOY_KEY in Vercel's Production environment; no deployment or build was started.");
     }
+    const clientId = env.WORKOS_CLIENT_ID?.trim();
+    if (!clientId) {
+      throw new Error("Production requires WORKOS_CLIENT_ID in Vercel's Production environment; no deployment or build was started.");
+    }
     return [
       ...dependencyBuilds,
+      // Convex evaluates auth.config.ts using its own environment, not Vercel's.
+      // The production deploy key selects the backend for this command too.
+      { label: "Configure production Convex WorkOS client", args: ["x", "convex", "env", "set", "WORKOS_CLIENT_ID", clientId] },
       { label: "Build dashboard and deploy production Convex", args: ["x", "convex", "deploy", "--cmd", buildCommand, "--cmd-url-env-var-name", "NEXT_PUBLIC_CONVEX_URL"] },
       // The same production deploy key selects the same backend for both calls.
       { label: "Seed shared sites in production", args: ["x", "convex", "run", "cachedSites:seed", "{}"] },

@@ -2,9 +2,30 @@ import { describe, expect, test } from "bun:test";
 import { buildDashboard, dashboardBuildSteps } from "./build-dashboard";
 
 describe("Dashboard deployment and database seed", () => {
+  test("production configures Convex with the dashboard client ID before deploying", () => {
+    const steps = dashboardBuildSteps({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake", WORKOS_CLIENT_ID: "  client_test  " });
+    expect(steps.at(-3)!.args).toEqual(["x", "convex", "env", "set", "WORKOS_CLIENT_ID", "client_test"]);
+    expect(steps.at(-2)!.args.slice(0, 3)).toEqual(["x", "convex", "deploy"]);
+  });
+  test("production refuses a missing WorkOS client ID before any work", async () => {
+    for (const clientId of [undefined, "", "   "]) {
+      let calls = 0;
+      await expect(buildDashboard({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake", WORKOS_CLIENT_ID: clientId }, async () => { calls++; return 0; })).rejects.toThrow("Production requires WORKOS_CLIENT_ID");
+      expect(calls).toBe(0);
+    }
+  });
+  test("failed WorkOS configuration prevents deployment and seeding", async () => {
+    const commands: string[][] = [];
+    await expect(buildDashboard({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake", WORKOS_CLIENT_ID: "client_test" }, async args => {
+      commands.push(args);
+      return args.includes("set") ? 1 : 0;
+    })).rejects.toThrow("Configure production Convex WorkOS client failed");
+    expect(commands.at(-1)!.slice(0, 5)).toEqual(["x", "convex", "env", "set", "WORKOS_CLIENT_ID"]);
+    expect(commands.some(args => args.includes("deploy") || args.includes("cachedSites:seed"))).toBe(false);
+  });
   test("production runs the seed after successful deployment", async () => {
     const commands: string[][] = [];
-    await buildDashboard({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake" }, async args => { commands.push(args); return 0; });
+    await buildDashboard({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake", WORKOS_CLIENT_ID: "client_test" }, async args => { commands.push(args); return 0; });
     expect(commands.slice(-2)).toEqual([
       ["x", "convex", "deploy", "--cmd", "bun run --cwd apps/dashboard build", "--cmd-url-env-var-name", "NEXT_PUBLIC_CONVEX_URL"],
       ["x", "convex", "run", "cachedSites:seed", "{}"],
@@ -18,7 +39,7 @@ describe("Dashboard deployment and database seed", () => {
     }
   });
   test("failed deployment skips seed and failed seed fails the build", async () => {
-    const env = { VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake" };
+    const env = { VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake", WORKOS_CLIENT_ID: "client_test" };
     const dependencies = dashboardBuildSteps(env).length - 2;
     let calls = 0;
     await expect(buildDashboard(env, async () => ++calls <= dependencies ? 0 : 1)).rejects.toThrow("must not publish");
@@ -43,7 +64,7 @@ test("all build modes compile exported workspace packages before the dashboard",
   for (const env of [
     {}, { VERCEL_ENV: "preview" },
     { VERCEL_ENV: "preview", CONVEX_DEPLOY_KEY: "preview:team:project|fake" },
-    { VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake" },
+    { VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake", WORKOS_CLIENT_ID: "client_test" },
   ]) {
     const commands: string[][] = [];
     await buildDashboard(env, async args => { commands.push(args); return 0; });
@@ -69,6 +90,6 @@ test("all build modes compile exported workspace packages before the dashboard",
 
 test("a failed dependency build prevents both frontend build and deployment", async () => {
   const commands: string[][] = [];
-  await expect(buildDashboard({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake" }, async args => { commands.push(args); return 1; })).rejects.toThrow("Build @getdesign/types failed");
+  await expect(buildDashboard({ VERCEL_ENV: "production", CONVEX_DEPLOY_KEY: "prod:test|fake", WORKOS_CLIENT_ID: "client_test" }, async args => { commands.push(args); return 1; })).rejects.toThrow("Build @getdesign/types failed");
   expect(commands).toEqual([["run", "--cwd", "packages/types", "build"]]);
 });
