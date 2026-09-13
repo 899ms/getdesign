@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { UserProfile } from "@workos-inc/widgets";
@@ -27,6 +28,8 @@ async function ProviderKeys({ accessToken }: { accessToken: string }) {
     />
   );
 }
+
+export const metadata: Metadata = { title: "Account" };
 
 export default async function AccountPage() {
   const { accessToken, user } = await withAuth();

@@ -34,7 +34,7 @@ mock.module("convex/react", () => ({
 const { GET: markdown } = await import("../app/r/[id]/design.md/route");
 const { GET: json } = await import("../app/r/[id]/design.json/route");
 const { GET: image } = await import("../app/r/[id]/images/[index]/route");
-const { default: Page } = await import("../app/r/[id]/page");
+const { default: Page, generateMetadata } = await import("../app/r/[id]/page");
 const { ShareRun } = await import("../app/(dashboard)/runs/[slug]/share-run");
 const request = new Request("https://app.example/r/published-run/design.md");
 const context = { params: Promise.resolve({ id: "published-run" }) };
@@ -69,6 +69,7 @@ test("missing or unpublished runs return 404 for every download", async () => {
   const response = await image(request, { params: Promise.resolve({ id: "published-run", index: "0" }) });
   expect(response.status).toBe(404);
   await expect(Page(context)).rejects.toThrow("notFound");
+  await expect(generateMetadata(context)).rejects.toThrow("notFound");
 });
 
 test("agent links retain the public HTTPS host behind a reverse proxy", async () => {
@@ -124,4 +125,20 @@ test("owner controls are a public/private dropdown with a copyable link when pub
     "utf8",
   );
   expect(shell.indexOf("<ExportActions")).toBeLessThan(shell.indexOf("<ShareRun"));
+});
+
+
+test("shared metadata describes only a published run and keeps it out of search", async () => {
+  const metadata = await generateMetadata(context);
+  expect(metadata.title).toBe("Example design");
+  expect(metadata.robots).toEqual({ index: false, follow: false });
+  expect(metadata.alternates?.canonical).toBe("https://dashboard.getdesign.app/r/published-run");
+  expect(metadata.openGraph).toMatchObject({
+    title: "Example design · getdesign",
+    url: "https://dashboard.getdesign.app/r/published-run",
+    description: "View Example design on getdesign. Download the published design document and screenshots.",
+  });
+  expect(metadata.twitter).toMatchObject({ card: "summary", title: "Example design · getdesign" });
+  for (const args of getConvexClient.mock.calls) expect(args).toEqual([]);
+  expect(action).not.toHaveBeenCalled();
 });

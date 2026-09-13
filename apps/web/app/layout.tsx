@@ -26,9 +26,9 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
-const SITE_TITLE = `${SITE_NAME} · the design system for any URL`;
+const SITE_TITLE = `Design system extractor for any website · ${SITE_NAME}`;
 const SITE_DESCRIPTION =
-  "Turn any public URL into a design.md with colors, typography, and components from the site's real CSS. Use the web app, API, CLI, SDK, or coding agent skill.";
+  "Extract colors, fonts, spacing, and components from a website into a design.md. Download a style guide and screenshots for your next project or coding agent.";
 
 const indexable = isProductionDeployment();
 

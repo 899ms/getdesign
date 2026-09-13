@@ -23,9 +23,9 @@ export function HeroSection() {
 
         <p className="mt-6 max-w-[480px] text-[14.5px] leading-relaxed text-muted">
           getdesign opens a site in a real browser, extracts palette,
-          typography, and components, and returns a production-grade{" "}
+          typography, and components, and returns a downloadable{" "}
           <span className="text-foreground">design.md</span>, grounded in the
-          site&apos;s actual CSS. Five surfaces, one agent.
+          site&apos;s actual CSS. Use it as a style guide or give it to your coding agent.
         </p>
 
         <div className="mt-8">

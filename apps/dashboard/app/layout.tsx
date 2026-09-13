@@ -19,6 +19,10 @@ const fontMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+  title: { default: "Dashboard · getdesign", template: "%s · getdesign" },
+  description: "Extract website design systems, explore cached examples, and manage your design runs with getdesign.",
+  metadataBase: new URL("https://dashboard.getdesign.app"),
+  robots: { index: false, follow: false },
   applicationName: "getdesign",
   appleWebApp: { title: "getdesign", capable: false },
   referrer: "no-referrer",

@@ -1,4 +1,5 @@
 import { FrameSection } from "./frame-section";
+import { FaqSection } from "./faq-section";
 import { FinalCtaSection } from "./final-cta-section";
 import { HeroSection } from "./hero-section";
 import { HowItWorksSection } from "./how-it-works-section";
@@ -15,6 +16,9 @@ export function HomePage() {
       </FrameSection>
       <FrameSection id="surfaces">
         <SurfacesSection />
+      </FrameSection>
+      <FrameSection id="faq">
+        <FaqSection />
       </FrameSection>
       <FrameSection id="cta">
         <FinalCtaSection />

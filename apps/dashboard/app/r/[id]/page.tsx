@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { DesignDocument } from "@/components/design-document";
 import { loadPublicRun } from "@/lib/public-runs";
@@ -7,14 +8,32 @@ import { ExportActions } from "@/app/(dashboard)/runs/[slug]/export-actions";
 import { ScreenshotGallery } from "@/app/(dashboard)/runs/[slug]/gallery-panel";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = {
-  title: "Shared design | getdesign",
-  description: "View and download a published design document and its screenshots.",
-};
+// Deduplicate the anonymous lookup within a render, without caching across requests.
+const getPublicRun = cache(loadPublicRun);
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const run = await getPublicRun(id);
+  if (!run) notFound();
+  const siteName = runPageTitle({
+    domain: run.domain, url: run.url, markdown: run.markdown, docSiteName: artifactSiteName(run.doc),
+  });
+  const title = siteName;
+  const description = `View ${siteName} on getdesign. Download the published design document${run.images.length > 0 ? " and screenshots" : ""}.`;
+  const url = `https://dashboard.getdesign.app/r/${encodeURIComponent(run.id)}`;
+  return {
+    title,
+    description,
+    robots: { index: false, follow: false },
+    alternates: { canonical: url },
+    openGraph: { title: `${title} · getdesign`, description, url, siteName: "getdesign", type: "website" },
+    twitter: { card: "summary", title: `${title} · getdesign`, description },
+  };
+}
 
 export default async function PublicRunPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const run = await loadPublicRun(id);
+  const run = await getPublicRun(id);
   if (!run) notFound();
   const siteName = runPageTitle({
     domain: run.domain, url: run.url, markdown: run.markdown, docSiteName: artifactSiteName(run.doc),
@@ -24,7 +43,7 @@ export default async function PublicRunPage({ params }: { params: Promise<{ id: 
     <main className="flex min-h-svh items-stretch">
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
-          <a href="https://getdesign.app" className="text-sm font-semibold">getdesign</a>
+          <a href="https://www.getdesign.app" className="text-sm font-semibold">getdesign</a>
           <span className="min-w-0 truncate text-sm text-muted-foreground" title={siteName}>{siteName}</span>
           <ExportActions content={run.markdown} siteName={siteName} />
         </header>

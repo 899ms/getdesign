@@ -12,6 +12,8 @@ Changes that affect the public surfaces (HTTP API, `@getdesign/sdk`, `@getdesign
 
 ### Added
 
+- **[web]** Visible homepage FAQ with matching structured data and SEO validation notes.
+- **[dashboard]** Page titles and published-run social metadata, with private and unpublished runs excluded from metadata reads.
 - **[dashboard]** Account stores encrypted per-user Daytona and OpenAI keys. Dashboard runs decrypt those keys on the server and no longer read `DAYTONA_API_KEY` / `OPENAI_API_KEY` from the process environment.
 - **[dashboard]** API, CLI, SDK, Skills, Docs, and Support pages with marketing-style animated demos, copy-paste quickstarts, and links to `docs.getdesign.app`. Documents that v1 has no getdesign API key; full runs use BYOK Daytona/OpenAI credentials.
 - **[content]** New `@getdesign/content` package for shared demo sites, surface metadata, docs URLs, and snippet builders (used by dashboard, web, and video).
@@ -26,12 +28,18 @@ Changes that affect the public surfaces (HTTP API, `@getdesign/sdk`, `@getdesign
 
 ### Changed
 
+- **[web]** More descriptive search titles and mobile wrapping for the hero preview and skill install command.
+- **[dashboard]** Production crawlers can read the existing `noindex` headers; private pages still require authentication and previews remain blocked.
 - **[dashboard]** Overview is the user's completed runs. Cached sites moved to Examples (`/sites`). Agent is a URL field; setup copy appears only when keys are missing or the user has no runs yet.
 - **[dashboard]** Capture failures now stop the run. Text-only is an explicit "Continue with text-only" choice, not a silent fallback.
 - **[api]** HTTP API now requires a WorkOS bearer token and request-scoped BYOK headers.
 - **[content]** `buildCurlExample` and `buildApiRequest` include the WorkOS bearer header and request-scoped Daytona/OpenAI keys.
 - **[web]** Surfaces section heading `"Four surfaces, one agent."` → `"Five surfaces, one agent."` with revised subhead.
 - **[web]** Footer GitHub link now points at [github.com/MohtashamMurshid/getdesign](https://github.com/MohtashamMurshid/getdesign) instead of the `github.com` placeholder.
+
+### Removed
+
+- **[repo]** Studio desktop app, Studio marketing site, release workflow, and their workspace dependencies.
 
 ---
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { redirect } from "next/navigation";
@@ -16,6 +17,8 @@ import {
   parseRunVisibilityFilter,
   RUNS_PAGE_QUERY_LIMIT,
 } from "@/lib/design-run-preview";
+
+export const metadata: Metadata = { title: "Runs" };
 
 export default async function RunsPage({
   searchParams,

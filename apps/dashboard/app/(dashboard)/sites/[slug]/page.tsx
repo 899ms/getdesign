@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
@@ -5,6 +6,8 @@ import { DesignDocument } from "@/components/design-document";
 import { loadCachedSite, formatCaptureDate } from "@/lib/cached-sites";
 import { ScreenshotGallery } from "../../runs/[slug]/gallery-panel";
 import { ExportActions } from "../../runs/[slug]/export-actions";
+
+export const metadata: Metadata = { title: "Cached design example" };
 
 export default async function CachedSitePage({ params }: {
   params: Promise<{ slug: string }>;

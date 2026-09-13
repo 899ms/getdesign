@@ -6,6 +6,7 @@ import { join } from "node:path";
 const environment = process.env.SEO_BUILD_ENV;
 const production = environment === "production";
 const webDir = process.env.SEO_WEB_BUILD ?? "apps/web/.next";
+const webOnly = process.env.SEO_WEB_ONLY === "1";
 const docsDir = process.env.SEO_DOCS_DIST ?? "apps/docs/dist";
 
 async function inspect(file: string) {
@@ -28,10 +29,10 @@ async function inspect(file: string) {
 
 describe.skipIf(!environment)(`rendered ${environment} SEO`, () => {
   const webPages = [
-    { file: "index.html", url: "https://www.getdesign.app", title: "getdesign · the design system for any URL" },
-    { file: "design.html", url: "https://www.getdesign.app/design", title: "Design · getdesign" },
+    { file: "index.html", url: "https://www.getdesign.app", title: "Design system extractor for any website · getdesign" },
+    { file: "design.html", url: "https://www.getdesign.app/design", title: "Brand guidelines and design tokens · getdesign" },
   ];
-  const docsPages = existsSync(docsDir)
+  const docsPages = !webOnly && existsSync(docsDir)
     ? readdirSync(docsDir, { recursive: true }).filter((file) => String(file).endsWith(".html")).map(String)
     : [];
 
@@ -52,7 +53,7 @@ describe.skipIf(!environment)(`rendered ${environment} SEO`, () => {
     });
   }
 
-  test("docs build is present", () => expect(docsPages.length).toBeGreaterThan(20));
+  test.skipIf(webOnly)("docs build is present", () => expect(docsPages.length).toBeGreaterThan(20));
   for (const file of docsPages) {
     test(`docs ${file}`, async () => {
       const page = await inspect(join(docsDir, file));
@@ -83,11 +84,12 @@ describe.skipIf(!environment)(`rendered ${environment} SEO`, () => {
     expect(noindex).toEqual(production ? [] : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]);
     const webSitemap = readFileSync(join(webDir, "server/app/sitemap.xml.body"), "utf8");
     const webRobots = readFileSync(join(webDir, "server/app/robots.txt.body"), "utf8");
-    const docsRobots = readFileSync(join(docsDir, "robots.txt"), "utf8");
+    const docsRobots = webOnly ? "" : readFileSync(join(docsDir, "robots.txt"), "utf8");
     if (production) {
       expect(webSitemap.match(/<loc>/g)).toHaveLength(2);
       expect(webSitemap).not.toMatch(/dashboard|vercel\.app|localhost|<lastmod>/);
       expect(webRobots).toContain("Sitemap: https://www.getdesign.app/sitemap.xml");
+      if (webOnly) return;
       expect(docsRobots).toContain("Sitemap: https://docs.getdesign.app/sitemap-index.xml");
       const sitemap = readFileSync(join(docsDir, "sitemap-0.xml"), "utf8");
       const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
@@ -101,6 +103,7 @@ describe.skipIf(!environment)(`rendered ${environment} SEO`, () => {
       expect(webSitemap).not.toContain("<loc>");
       expect(webRobots).toContain("Disallow: /");
       expect(webRobots).not.toContain("Sitemap:");
+      if (webOnly) return;
       expect(docsRobots).toBe("User-agent: *\nDisallow: /\n");
       expect(existsSync(join(docsDir, "sitemap-index.xml"))).toBe(false);
     }
